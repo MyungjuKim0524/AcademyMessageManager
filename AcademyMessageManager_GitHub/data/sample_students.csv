@@ -1,0 +1,4 @@
+분반명,수업유형,수업일자,시험회차,이름,학교명,수강상태,출석 여부,보호자명,보호자 이메일,예습 과제 등급,주간 과제 등급,test 결과
+JAVA-A,REGULAR,2026-05-11,3회차,김철수,OO중,ACTIVE,출석,김보호,parent1@example.com,A,B,85점
+JAVA-A,REGULAR,2026-05-11,3회차,박민수,OO중,ACTIVE,결석,박보호,parent2@example.com,B,C,
+중3내신-A,EXAM_PREP,2026-05-11,1회차,이영희,XX중,ACTIVE,출석,이보호,parent3@example.com,A,A,92점

@@ -1,0 +1,5 @@
+db.url=jdbc:oracle:thin:@localhost:1521/testpdb
+db.username=my_db_username
+db.password=my_db_password
+mail.smtp.host=smtp.gmail.com
+mail.smtp.port=587
