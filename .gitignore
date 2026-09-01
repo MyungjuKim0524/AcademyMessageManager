@@ -1,20 +1,35 @@
-# Database & Mail Credentials (실제 로컬 설정 파일 추적 차단)
+# Database & Mail Credentials
 src/main/resources/config.properties
-*.env
-*.properties
-!src/main/resources/config.properties.example
+.env
+.env.*
 mail_credentials.enc
+
+# Secret / Certificate Files
 *.key
 *.pem
 *.p12
+*.jks
+*.keystore
+*.pfx
+*.enc
+
+# Runtime Logs / Exports
+send_logs.csv
+send-log-*.csv
+logs/
+exports/
+*.log
 
 # Real Datasets & DB Backups
 data/real_*
 *.dump
 *.sql.bak
 
-# IDE & Build Artifacts
+# Maven / IDE
 target/
 .idea/
 *.iml
+
+# OS
 .DS_Store
+Thumbs.db

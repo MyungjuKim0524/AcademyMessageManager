@@ -1,0 +1,9 @@
+db.url=jdbc:oracle:thin:@localhost:1521/testpdb
+db.username=YOUR_DB_USERNAME
+db.password=YOUR_DB_PASSWORD
+mail.smtp.host=smtp.gmail.com
+mail.smtp.port=587
+
+# 운영 환경에서는 아래 환경변수를 우선 사용합니다.
+# ACADEMY_DB_URL, ACADEMY_DB_USERNAME, ACADEMY_DB_PASSWORD
+# 메일 자격증명 파일 디렉터리: ACADEMY_DATA_DIR
