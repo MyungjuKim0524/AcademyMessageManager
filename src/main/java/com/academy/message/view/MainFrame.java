@@ -66,6 +66,7 @@ public class MainFrame extends JFrame {
     private final DataValidationService validationService = new DataValidationService();
     private final MessageGenerationService messageGenerationService = new MessageGenerationService();
     private final AcademyImportDAO academyImportDAO = new AcademyImportDAO();
+    private File importedSourceFile;
     private final SendLogDAO sendLogDAO = new SendLogDAO();
     private final TemplateDAO templateDAO = new TemplateDAO();
     private final MakeupDAO makeupDAO = new MakeupDAO();
@@ -304,7 +305,7 @@ public class MainFrame extends JFrame {
         completeButton.addActionListener(event -> updateSelectedMakeupStatus(requestTable, "COMPLETED"));
 
         JButton cancelButton = new JButton("보강 취소");
-        cancelButton.addActionListener(event -> updateSelectedMakeupStatus(requestTable, "CANCELED"));
+        cancelButton.addActionListener(event -> updateSelectedMakeupStatus(requestTable, "CANCELLED"));
 
         JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT));
         top.add(new JLabel("보강 시작일"));
@@ -401,7 +402,8 @@ public class MainFrame extends JFrame {
         }
 
         try {
-            ImportBatch batch = academyDataImportService.loadAndValidate(chooser.getSelectedFile());
+            importedSourceFile = chooser.getSelectedFile();
+            ImportBatch batch = academyDataImportService.loadAndValidate(importedSourceFile);
             importedRows = batch.rows();
             List<String> errors = batch.validationErrors();
             fillPreviewTable();
@@ -470,7 +472,7 @@ public class MainFrame extends JFrame {
         }
 
         try {
-            ImportSummary summary = academyImportDAO.importRows(importedRows);
+            ImportSummary summary = academyImportDAO.importRows(importedRows, importedSourceFile);
             JOptionPane.showMessageDialog(this, summary.toDisplayText(), "DB 업데이트 완료", JOptionPane.INFORMATION_MESSAGE);
             statusLabel.setText("DB 업데이트를 완료했습니다.");
         } catch (Exception ex) {
@@ -993,7 +995,7 @@ public class MainFrame extends JFrame {
         String newStatus = EnrollmentStatusUtil.toCode(String.valueOf(enrollmentEditStatusCombo.getSelectedItem()));
         String message = row.getStudentName() + " 학생의 수정 사항을 DB에 반영하시겠습니까?";
         if ("WITHDRAWN".equals(newStatus)) {
-            message += "\n퇴원 처리 시 미완료 보강 신청은 자동으로 CANCELED 처리됩니다.";
+            message += "\n퇴원 처리 시 미완료 보강 신청은 자동으로 CANCELLED 처리됩니다.";
         }
         int confirm = JOptionPane.showConfirmDialog(this, message, "DB 반영 확인", JOptionPane.YES_NO_OPTION);
         if (confirm != JOptionPane.YES_OPTION) {

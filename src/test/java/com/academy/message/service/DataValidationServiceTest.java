@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class DataValidationServiceTest {
     @Test void reportsBusinessErrorsWithSourceRowNumber() {
         ImportRow invalid = new ImportRow("A반", "UNKNOWN", LocalDate.of(2026, 8, 8), "1회",
-                "김학생", "코덱스중", "WITHDRAWN", "지각", "김보호", "not-an-email", "D", "", "");
+                "김학생", "코덱스중", "WITHDRAWN", "조퇴", "김보호", "not-an-email", "D", "", "");
 
         List<String> errors = new DataValidationService().validate(List.of(invalid));
 

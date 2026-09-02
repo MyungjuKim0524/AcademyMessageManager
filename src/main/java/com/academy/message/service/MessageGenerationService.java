@@ -65,7 +65,7 @@ public class MessageGenerationService {
     }
 
     public boolean hasAnyTestResult(List<ImportRow> rows) {
-        return rows.stream().anyMatch(row -> !row.getTestResult().isBlank());
+        return rows.stream().anyMatch(row -> row.getCorrectCount() != null);
     }
 
 }

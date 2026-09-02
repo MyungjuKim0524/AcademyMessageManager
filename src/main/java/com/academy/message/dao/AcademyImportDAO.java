@@ -1,215 +1,141 @@
 package com.academy.message.dao;
 
+import com.academy.message.domain.AttendanceStatus;
 import com.academy.message.model.ImportRow;
 import com.academy.message.model.ImportSummary;
-
-import java.sql.Connection;
-import java.sql.Date;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Objects;
 import com.academy.message.port.ConnectionProvider;
+import com.academy.message.util.ImportHashUtil;
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.security.MessageDigest;
+import java.sql.*;
+import java.util.*;
 
 public class AcademyImportDAO {
     private final ConnectionProvider connectionProvider;
-
     public AcademyImportDAO() { this(new DBConnection()); }
-    public AcademyImportDAO(ConnectionProvider connectionProvider) { this.connectionProvider = connectionProvider; }
+    public AcademyImportDAO(ConnectionProvider provider) { this.connectionProvider = provider; }
 
-    public ImportSummary importRows(Iterable<ImportRow> rows) throws SQLException {
-        ImportSummary summary = new ImportSummary();
-        try (Connection connection = connectionProvider.getConnection()) {
-            connection.setAutoCommit(false);
+    public ImportSummary importRows(Iterable<ImportRow> rows, File sourceFile) throws SQLException {
+        List<ImportRow> list = new ArrayList<>(); rows.forEach(list::add);
+        try (Connection c = connectionProvider.getConnection()) {
+            c.setAutoCommit(false);
             try {
-                for (ImportRow row : rows) {
-                    int classId = findOrCreateClass(connection, row, summary);
-                    int studentId = findOrCreateStudent(connection, row, summary);
-                    ensureEnrollment(connection, classId, studentId, row, summary);
-                    int sessionId = findOrCreateSession(connection, classId, row, summary);
-                    upsertGrade(connection, sessionId, studentId, row, summary);
+                long jobId = createImportJob(c, sourceFile, list.size());
+                ImportSummary summary = new ImportSummary(); int rowNumber = 2;
+                for (ImportRow row : list) {
+                    long classroomId = classroom(c, row, summary);
+                    long studentId = student(c, row, summary);
+                    long enrollmentId = enrollment(c, classroomId, studentId, row, summary);
+                    long lessonId = lesson(c, classroomId, row, summary);
+                    Result result = lessonResult(c, lessonId, enrollmentId, row, summary);
+                    auditRow(c, jobId, result.id(), rowNumber++, row, result.action());
                 }
-                connection.commit();
-                return summary;
-            } catch (SQLException ex) {
-                connection.rollback();
-                throw ex;
-            }
-        }
-    }
-
-    private int findOrCreateClass(Connection connection, ImportRow row, ImportSummary summary) throws SQLException {
-        Integer existingId = queryId(connection, "SELECT class_id FROM academy_class WHERE class_name = ?", row.getClassName());
-        if (existingId != null) {
-            return existingId;
-        }
-        try (PreparedStatement statement = connection.prepareStatement(
-                "INSERT INTO academy_class (class_name, class_type, subject) VALUES (?, ?, 'JAVA')")) {
-            statement.setString(1, row.getClassName());
-            statement.setString(2, row.getClassType());
-            statement.executeUpdate();
-            summary.incrementInsertedClasses();
-        }
-        return queryRequiredId(connection, "SELECT class_id FROM academy_class WHERE class_name = ?", row.getClassName());
-    }
-
-    private int findOrCreateStudent(Connection connection, ImportRow row, ImportSummary summary) throws SQLException {
-        Integer existingId = queryId(connection,
-                "SELECT student_id FROM student WHERE student_name = ? AND school_name = ?",
-                row.getStudentName(), row.getSchoolName());
-        if (existingId == null) {
-            try (PreparedStatement statement = connection.prepareStatement(
-                    "INSERT INTO student (student_name, school_name, parent_name, parent_email) VALUES (?, ?, ?, ?)")) {
-                statement.setString(1, row.getStudentName());
-                statement.setString(2, row.getSchoolName());
-                statement.setString(3, row.getParentName());
-                statement.setString(4, row.getParentEmail());
-                statement.executeUpdate();
-                summary.incrementInsertedStudents();
-            }
-            return queryRequiredId(connection,
-                    "SELECT student_id FROM student WHERE student_name = ? AND school_name = ?",
-                    row.getStudentName(), row.getSchoolName());
-        }
-
-        try (PreparedStatement statement = connection.prepareStatement(
-                "UPDATE student SET parent_name = ?, parent_email = ? WHERE student_id = ?")) {
-            statement.setString(1, row.getParentName());
-            statement.setString(2, row.getParentEmail());
-            statement.setInt(3, existingId);
-            int updated = statement.executeUpdate();
-            if (updated > 0) {
-                summary.incrementUpdatedStudents();
-            }
-        }
-        return existingId;
-    }
-
-    private void ensureEnrollment(Connection connection, int classId, int studentId, ImportRow row, ImportSummary summary)
-            throws SQLException {
-        Integer existingId = queryId(connection,
-                "SELECT enrollment_id FROM class_enrollment WHERE class_id = ? AND student_id = ?",
-                classId, studentId);
-        if (existingId != null) {
-            return;
-        }
-        try (PreparedStatement statement = connection.prepareStatement(
-                "INSERT INTO class_enrollment (class_id, student_id, status, start_date) VALUES (?, ?, ?, ?)")) {
-            statement.setInt(1, classId);
-            statement.setInt(2, studentId);
-            statement.setString(3, blankToDefault(row.getEnrollmentStatus(), "ACTIVE"));
-            statement.setDate(4, Date.valueOf(row.getSessionDate()));
-            statement.executeUpdate();
-            summary.incrementInsertedEnrollments();
-        }
-    }
-
-    private int findOrCreateSession(Connection connection, int classId, ImportRow row, ImportSummary summary)
-            throws SQLException {
-        Integer existingId = queryId(connection,
-                "SELECT session_id FROM class_session WHERE class_id = ? AND session_date = ? AND test_round = ?",
-                classId, Date.valueOf(row.getSessionDate()), row.getTestRound());
-        if (existingId != null) {
-            return existingId;
-        }
-        try (PreparedStatement statement = connection.prepareStatement(
-                "INSERT INTO class_session (class_id, session_date, test_round) VALUES (?, ?, ?)")) {
-            statement.setInt(1, classId);
-            statement.setDate(2, Date.valueOf(row.getSessionDate()));
-            statement.setString(3, row.getTestRound());
-            statement.executeUpdate();
-            summary.incrementInsertedSessions();
-        }
-        return queryRequiredId(connection,
-                "SELECT session_id FROM class_session WHERE class_id = ? AND session_date = ? AND test_round = ?",
-                classId, Date.valueOf(row.getSessionDate()), row.getTestRound());
-    }
-
-    private void upsertGrade(Connection connection, int sessionId, int studentId, ImportRow row, ImportSummary summary)
-            throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(
-                "SELECT grade_id, attendance, pre_grade, weekly_grade, test_result "
-                        + "FROM grade_record WHERE session_id = ? AND student_id = ?")) {
-            statement.setInt(1, sessionId);
-            statement.setInt(2, studentId);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (!resultSet.next()) {
-                    insertGrade(connection, sessionId, studentId, row);
-                    summary.incrementInsertedGrades();
-                    return;
+                try (PreparedStatement s = c.prepareStatement("UPDATE import_job SET success_rows=?, status='COMPLETED', finished_at=CURRENT_TIMESTAMP WHERE id=?")) {
+                    s.setInt(1, list.size()); s.setLong(2, jobId); s.executeUpdate();
                 }
-                int gradeId = resultSet.getInt("grade_id");
-                boolean changed = !Objects.equals(resultSet.getString("attendance"), row.getAttendance())
-                        || !Objects.equals(nullToBlank(resultSet.getString("pre_grade")), row.getPreGrade())
-                        || !Objects.equals(nullToBlank(resultSet.getString("weekly_grade")), row.getWeeklyGrade())
-                        || !Objects.equals(nullToBlank(resultSet.getString("test_result")), row.getTestResult());
-                if (changed) {
-                    updateGrade(connection, gradeId, row);
-                    summary.incrementUpdatedGrades();
-                } else {
-                    summary.incrementSkippedGrades();
-                }
+                c.commit(); return summary;
+            } catch (Exception ex) {
+                c.rollback();
+                if (ex instanceof SQLException sql) throw sql;
+                throw new SQLException("가져오기 처리 중 오류가 발생했습니다.", ex);
             }
         }
     }
 
-    private void insertGrade(Connection connection, int sessionId, int studentId, ImportRow row) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(
-                "INSERT INTO grade_record (session_id, student_id, attendance, pre_grade, weekly_grade, test_result) "
-                        + "VALUES (?, ?, ?, ?, ?, ?)")) {
-            statement.setInt(1, sessionId);
-            statement.setInt(2, studentId);
-            statement.setString(3, row.getAttendance());
-            statement.setString(4, blankToNull(row.getPreGrade()));
-            statement.setString(5, blankToNull(row.getWeeklyGrade()));
-            statement.setString(6, blankToNull(row.getTestResult()));
-            statement.executeUpdate();
-        }
+    private long classroom(Connection c, ImportRow r, ImportSummary sum) throws SQLException {
+        Long id = id(c, "SELECT id FROM classroom WHERE name=? AND class_type=?", r.getClassName(), r.getClassType());
+        if (id != null) return id;
+        sum.incrementInsertedClasses();
+        return returning(c, "INSERT INTO classroom(name,class_type) VALUES(?,?) RETURNING id", r.getClassName(), r.getClassType());
     }
 
-    private void updateGrade(Connection connection, int gradeId, ImportRow row) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(
-                "UPDATE grade_record SET attendance = ?, pre_grade = ?, weekly_grade = ?, test_result = ? WHERE grade_id = ?")) {
-            statement.setString(1, row.getAttendance());
-            statement.setString(2, blankToNull(row.getPreGrade()));
-            statement.setString(3, blankToNull(row.getWeeklyGrade()));
-            statement.setString(4, blankToNull(row.getTestResult()));
-            statement.setInt(5, gradeId);
-            statement.executeUpdate();
-        }
-    }
-
-    private Integer queryId(Connection connection, String sql, Object... parameters) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            for (int i = 0; i < parameters.length; i++) {
-                statement.setObject(i + 1, parameters[i]);
-            }
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    return resultSet.getInt(1);
-                }
-                return null;
-            }
-        }
-    }
-
-    private int queryRequiredId(Connection connection, String sql, Object... parameters) throws SQLException {
-        Integer id = queryId(connection, sql, parameters);
+    private long student(Connection c, ImportRow r, ImportSummary sum) throws SQLException {
+        Long id = id(c, "SELECT id FROM student WHERE name=? AND school_name=? ORDER BY id LIMIT 1", r.getStudentName(), r.getSchoolName());
         if (id == null) {
-            throw new SQLException("생성된 ID를 다시 조회하지 못했습니다.");
+            sum.incrementInsertedStudents();
+            return returning(c, "INSERT INTO student(name,school_name,parent_name,parent_email) VALUES(?,?,?,?) RETURNING id",
+                    r.getStudentName(), r.getSchoolName(), blank(r.getParentName()), blank(r.getParentEmail()));
+        }
+        try (PreparedStatement s = c.prepareStatement("UPDATE student SET parent_name=?,parent_email=? WHERE id=?")) {
+            s.setString(1, blank(r.getParentName())); s.setString(2, blank(r.getParentEmail())); s.setLong(3, id);
+            if (s.executeUpdate() > 0) sum.incrementUpdatedStudents();
         }
         return id;
     }
 
-    private String blankToDefault(String value, String defaultValue) {
-        return value == null || value.isBlank() ? defaultValue : value;
+    private long enrollment(Connection c, long classroomId, long studentId, ImportRow r, ImportSummary sum) throws SQLException {
+        Long id = id(c, "SELECT id FROM enrollment WHERE classroom_id=? AND student_id=? ORDER BY enrolled_at DESC LIMIT 1", classroomId, studentId);
+        if (id != null) return id;
+        sum.incrementInsertedEnrollments();
+        return returning(c, "INSERT INTO enrollment(classroom_id,student_id,status,enrolled_at) VALUES(?,?,?,?) RETURNING id",
+                classroomId, studentId, defaultValue(r.getEnrollmentStatus(), "ACTIVE"), java.sql.Date.valueOf(r.getSessionDate()));
     }
 
-    private String blankToNull(String value) {
-        return value == null || value.isBlank() ? null : value;
+    private long lesson(Connection c, long classroomId, ImportRow r, ImportSummary sum) throws SQLException {
+        Long id = id(c, "SELECT id FROM lesson WHERE classroom_id=? AND lesson_date=? AND exam_round IS NOT DISTINCT FROM ?",
+                classroomId, java.sql.Date.valueOf(r.getSessionDate()), blank(r.getTestRound()));
+        if (id != null) return id;
+        sum.incrementInsertedSessions();
+        return returning(c, "INSERT INTO lesson(classroom_id,lesson_date,exam_round) VALUES(?,?,?) RETURNING id",
+                classroomId, java.sql.Date.valueOf(r.getSessionDate()), blank(r.getTestRound()));
     }
 
-    private String nullToBlank(String value) {
-        return value == null ? "" : value;
+    private Result lessonResult(Connection c, long lessonId, long enrollmentId, ImportRow r, ImportSummary sum) throws SQLException {
+        try (PreparedStatement s = c.prepareStatement("SELECT id,attendance_status,prework_grade,weekly_assignment_grade,correct_count,total_count FROM lesson_result WHERE lesson_id=? AND enrollment_id=?")) {
+            s.setLong(1, lessonId); s.setLong(2, enrollmentId);
+            try (ResultSet rs = s.executeQuery()) {
+                if (!rs.next()) {
+                    long id = insertResult(c, lessonId, enrollmentId, r); sum.incrementInsertedGrades(); return new Result(id,"INSERT");
+                }
+                long id = rs.getLong("id");
+                boolean changed = !Objects.equals(rs.getString("attendance_status"), attendance(r))
+                        || !Objects.equals(rs.getString("prework_grade"), blank(r.getPreGrade()))
+                        || !Objects.equals(rs.getString("weekly_assignment_grade"), blank(r.getWeeklyGrade()))
+                        || !Objects.equals(nullableInt(rs,"correct_count"), r.getCorrectCount())
+                        || !Objects.equals(nullableInt(rs,"total_count"), r.getTotalCount());
+                if (!changed) { sum.incrementSkippedGrades(); return new Result(id,"SKIP"); }
+                try (PreparedStatement u = c.prepareStatement("UPDATE lesson_result SET attendance_status=?,prework_grade=?,weekly_assignment_grade=?,correct_count=?,total_count=? WHERE id=?")) {
+                    setResultValues(u, r, 1); u.setLong(6,id); u.executeUpdate();
+                }
+                sum.incrementUpdatedGrades(); return new Result(id,"UPDATE");
+            }
+        }
     }
+
+    private long insertResult(Connection c, long lessonId, long enrollmentId, ImportRow r) throws SQLException {
+        try (PreparedStatement s = c.prepareStatement("INSERT INTO lesson_result(lesson_id,enrollment_id,attendance_status,prework_grade,weekly_assignment_grade,correct_count,total_count) VALUES(?,?,?,?,?,?,?) RETURNING id")) {
+            s.setLong(1,lessonId); s.setLong(2,enrollmentId); setResultValues(s,r,3);
+            try(ResultSet rs=s.executeQuery()){rs.next();return rs.getLong(1);}
+        }
+    }
+
+    private void setResultValues(PreparedStatement s, ImportRow r, int i) throws SQLException {
+        s.setString(i,attendance(r)); s.setString(i+1,blank(r.getPreGrade())); s.setString(i+2,blank(r.getWeeklyGrade()));
+        nullable(s,i+3,r.getCorrectCount()); nullable(s,i+4,r.getTotalCount());
+    }
+
+    private long createImportJob(Connection c, File file, int count) throws Exception {
+        String name=file==null?"unknown.csv":file.getName(); String type=name.toLowerCase().endsWith(".xlsx")?"XLSX":"CSV";
+        String hash=file==null?null:ImportHashUtil.fileHash(file);
+        return returning(c,"INSERT INTO import_job(source_type,source_file_name,file_hash,total_rows,status) VALUES(?,?,?,?,'PROCESSING') RETURNING id",type,name,hash,count);
+    }
+
+    private void auditRow(Connection c,long job,long result,int number,ImportRow r,String action)throws Exception{
+        String hash=ImportHashUtil.rowHash(r);
+        try(PreparedStatement s=c.prepareStatement("INSERT INTO import_row(import_job_id,lesson_result_id,row_number,row_hash,processing_result,enrollment_action) VALUES(?,?,?,?,?,'SKIP')")){
+            s.setLong(1,job);s.setLong(2,result);s.setInt(3,number);s.setString(4,hash);s.setString(5,action);s.executeUpdate();
+        }
+    }
+
+    private Long id(Connection c,String sql,Object...v)throws SQLException{try(PreparedStatement s=c.prepareStatement(sql)){params(s,v);try(ResultSet rs=s.executeQuery()){return rs.next()?rs.getLong(1):null;}}}
+    private long returning(Connection c,String sql,Object...v)throws SQLException{try(PreparedStatement s=c.prepareStatement(sql)){params(s,v);try(ResultSet rs=s.executeQuery()){if(!rs.next())throw new SQLException("ID 반환 실패");return rs.getLong(1);}}}
+    private void params(PreparedStatement s,Object...v)throws SQLException{for(int i=0;i<v.length;i++)s.setObject(i+1,v[i]);}
+    private void nullable(PreparedStatement s,int i,Integer v)throws SQLException{if(v==null)s.setNull(i,Types.SMALLINT);else s.setInt(i,v);}
+    private Integer nullableInt(ResultSet rs,String n)throws SQLException{int v=rs.getInt(n);return rs.wasNull()?null:v;}
+    private String attendance(ImportRow r){return AttendanceStatus.from(r.getAttendance()).name();}
+    private String blank(String v){return v==null||v.isBlank()?null:v.trim();}
+    private String defaultValue(String v,String d){return v==null||v.isBlank()?d:v.trim();}
+    private record Result(long id,String action){}
 }
