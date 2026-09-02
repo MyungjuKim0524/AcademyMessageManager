@@ -46,8 +46,8 @@ public class TemplateDAO implements TemplateProvider {
             String existing = findActiveTemplate(connection, classType);
             if (existing == null) {
                 try (PreparedStatement statement = connection.prepareStatement(
-                        "INSERT INTO message_template (class_type, template_name, template_content, active_yn) "
-                                + "VALUES (?, ?, ?, 'Y')")) {
+                        "INSERT INTO message_template (class_type, subject_template, body_template, is_active) "
+                                + "VALUES (?, ?, ?, TRUE)")) {
                     statement.setString(1, classType);
                     statement.setString(2, defaultName(classType));
                     statement.setString(3, content);
@@ -57,7 +57,7 @@ public class TemplateDAO implements TemplateProvider {
             }
 
             try (PreparedStatement statement = connection.prepareStatement(
-                    "UPDATE message_template SET template_content = ? WHERE class_type = ? AND active_yn = 'Y'")) {
+                    "UPDATE message_template SET body_template = ? WHERE class_type = ? AND is_active = TRUE")) {
                 statement.setString(1, content);
                 statement.setString(2, classType);
                 statement.executeUpdate();
@@ -71,7 +71,7 @@ public class TemplateDAO implements TemplateProvider {
 
     private String findActiveTemplate(Connection connection, String classType) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
-                "SELECT template_content FROM message_template WHERE class_type = ? AND active_yn = 'Y'")) {
+                "SELECT body_template FROM message_template WHERE class_type = ? AND is_active = TRUE")) {
             statement.setString(1, classType);
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
@@ -84,8 +84,8 @@ public class TemplateDAO implements TemplateProvider {
 
     private void insertDefaultTemplate(Connection connection, String classType) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
-                "INSERT INTO message_template (class_type, template_name, template_content, active_yn) "
-                        + "VALUES (?, ?, ?, 'Y')")) {
+                "INSERT INTO message_template (class_type, subject_template, body_template, is_active) "
+                        + "VALUES (?, ?, ?, TRUE)")) {
             statement.setString(1, classType);
             statement.setString(2, defaultName(classType));
             statement.setString(3, defaultTemplate(classType));

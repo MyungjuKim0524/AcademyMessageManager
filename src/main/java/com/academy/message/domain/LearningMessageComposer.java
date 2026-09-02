@@ -17,7 +17,7 @@ public final class LearningMessageComposer {
         AttendanceStatus attendance = AttendanceStatus.from(row.getAttendance());
         String preMessage = sections.includePreGrade() ? preGradeMessage(row.getPreGrade()) : "";
         String weeklyMessage = sections.includeWeeklyGrade() ? weeklyGradeMessage(row.getWeeklyGrade()) : "";
-        String testMessage = sections.includeTestResult() && hasText(row.getTestResult())
+        String testMessage = sections.includeTestResult() && row.getCorrectCount() != null
                 ? "테스트 결과는 " + row.getTestResult() + "입니다." : "";
 
         return cleanupBlankLines(template
@@ -51,7 +51,6 @@ public final class LearningMessageComposer {
         };
     }
 
-    private boolean hasText(String value) { return value != null && !value.isBlank(); }
     private String safe(String value) { return value == null ? "" : value; }
 
     private String cleanupBlankLines(String text) {

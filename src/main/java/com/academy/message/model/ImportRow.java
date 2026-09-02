@@ -1,6 +1,7 @@
 package com.academy.message.model;
 
 import java.time.LocalDate;
+import com.academy.message.domain.TestScore;
 
 public class ImportRow {
     private final String className;
@@ -15,7 +16,8 @@ public class ImportRow {
     private final String parentEmail;
     private final String preGrade;
     private final String weeklyGrade;
-    private final String testResult;
+    private final Integer correctCount;
+    private final Integer totalCount;
 
     public ImportRow(String className, String classType, LocalDate sessionDate, String testRound,
             String studentName, String schoolName, String enrollmentStatus, String attendance,
@@ -32,7 +34,30 @@ public class ImportRow {
         this.parentEmail = parentEmail;
         this.preGrade = preGrade;
         this.weeklyGrade = weeklyGrade;
-        this.testResult = testResult;
+        TestScore score = TestScore.parse(testResult);
+        this.correctCount = score.correctCount();
+        this.totalCount = score.totalCount();
+    }
+
+    public ImportRow(String className, String classType, LocalDate sessionDate, String testRound,
+            String studentName, String schoolName, String enrollmentStatus, String attendance,
+            String parentName, String parentEmail, String preGrade, String weeklyGrade,
+            Integer correctCount, Integer totalCount) {
+        this.className = className;
+        this.classType = classType;
+        this.sessionDate = sessionDate;
+        this.testRound = testRound;
+        this.studentName = studentName;
+        this.schoolName = schoolName;
+        this.enrollmentStatus = enrollmentStatus;
+        this.attendance = attendance;
+        this.parentName = parentName;
+        this.parentEmail = parentEmail;
+        this.preGrade = preGrade;
+        this.weeklyGrade = weeklyGrade;
+        TestScore score = new TestScore(correctCount, totalCount);
+        this.correctCount = score.correctCount();
+        this.totalCount = score.totalCount();
     }
 
     public String getClassName() {
@@ -84,6 +109,14 @@ public class ImportRow {
     }
 
     public String getTestResult() {
-        return testResult;
+        return new TestScore(correctCount, totalCount).format();
+    }
+
+    public Integer getCorrectCount() {
+        return correctCount;
+    }
+
+    public Integer getTotalCount() {
+        return totalCount;
     }
 }

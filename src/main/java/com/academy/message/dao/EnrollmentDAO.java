@@ -18,19 +18,19 @@ public class EnrollmentDAO {
 
     public List<EnrollmentStatusRow> search(String status, String className) throws SQLException {
         List<EnrollmentStatusRow> rows = new ArrayList<>();
-        String sql = "SELECT ce.enrollment_id, s.student_id, ac.class_name, ac.class_type, s.student_name, s.school_name, s.parent_email, "
-                + "ce.status, ce.start_date, ce.end_date "
-                + "FROM class_enrollment ce "
-                + "JOIN academy_class ac ON ce.class_id = ac.class_id "
-                + "JOIN student s ON ce.student_id = s.student_id "
+        String sql = "SELECT ce.id AS enrollment_id, s.id AS student_id, ac.name AS class_name, ac.class_type, s.name AS student_name, s.school_name, s.parent_email, "
+                + "ce.status, ce.enrolled_at AS start_date, ce.ended_at AS end_date "
+                + "FROM enrollment ce "
+                + "JOIN classroom ac ON ce.classroom_id = ac.id "
+                + "JOIN student s ON ce.student_id = s.id "
                 + "WHERE 1 = 1 ";
         if (status != null && !status.isBlank() && !"ALL".equals(status)) {
             sql += "AND ce.status = ? ";
         }
         if (className != null && !className.isBlank()) {
-            sql += "AND ac.class_name LIKE ? ";
+            sql += "AND ac.name LIKE ? ";
         }
-        sql += "ORDER BY ac.class_name, s.student_name";
+        sql += "ORDER BY ac.name, s.name";
 
         try (Connection connection = connectionProvider.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -66,7 +66,7 @@ public class EnrollmentDAO {
         List<String> classNames = new ArrayList<>();
         try (Connection connection = connectionProvider.getConnection();
                 PreparedStatement statement = connection.prepareStatement(
-                        "SELECT class_name FROM academy_class WHERE active_yn = 'Y' ORDER BY class_name");
+                        "SELECT name AS class_name FROM classroom WHERE is_active = TRUE ORDER BY name");
                 ResultSet resultSet = statement.executeQuery()) {
             while (resultSet.next()) {
                 classNames.add(resultSet.getString("class_name"));
@@ -79,10 +79,10 @@ public class EnrollmentDAO {
         try (Connection connection = connectionProvider.getConnection();
                 PreparedStatement statement = connection.prepareStatement(
                         "SELECT ce.status "
-                                + "FROM class_enrollment ce "
-                                + "JOIN academy_class ac ON ce.class_id = ac.class_id "
-                                + "JOIN student s ON ce.student_id = s.student_id "
-                                + "WHERE s.student_name = ? AND s.school_name = ? AND ac.class_name = ?")) {
+                                + "FROM enrollment ce "
+                                + "JOIN classroom ac ON ce.classroom_id = ac.id "
+                                + "JOIN student s ON ce.student_id = s.id "
+                                + "WHERE s.name = ? AND s.school_name = ? AND ac.name = ?")) {
             statement.setString(1, studentName);
             statement.setString(2, schoolName);
             statement.setString(3, className);
@@ -95,7 +95,7 @@ public class EnrollmentDAO {
     public String findParentEmail(String studentName, String schoolName) throws SQLException {
         try (Connection connection = connectionProvider.getConnection();
                 PreparedStatement statement = connection.prepareStatement(
-                        "SELECT parent_email FROM student WHERE student_name = ? AND school_name = ?")) {
+                        "SELECT parent_email FROM student WHERE name = ? AND school_name = ?")) {
             statement.setString(1, studentName);
             statement.setString(2, schoolName);
             try (ResultSet resultSet = statement.executeQuery()) {
@@ -109,15 +109,15 @@ public class EnrollmentDAO {
             connection.setAutoCommit(false);
             try {
                 try (PreparedStatement statement = connection.prepareStatement(
-                        "UPDATE student SET parent_email = ? WHERE student_id = ?")) {
+                        "UPDATE student SET parent_email = ? WHERE id = ?")) {
                     statement.setString(1, normalizeBlank(email));
                     statement.setInt(2, studentId);
                     statement.executeUpdate();
                 }
                 try (PreparedStatement statement = connection.prepareStatement(
-                        "UPDATE class_enrollment "
-                                + "SET status = ?, end_date = CASE WHEN ? = 'ACTIVE' THEN NULL ELSE SYSDATE END "
-                                + "WHERE enrollment_id = ?")) {
+                        "UPDATE enrollment "
+                                + "SET status = ?, ended_at = CASE WHEN ? = 'ACTIVE' THEN NULL ELSE CURRENT_DATE END "
+                                + "WHERE id = ?")) {
                     statement.setString(1, status);
                     statement.setString(2, status);
                     statement.setInt(3, enrollmentId);
@@ -125,8 +125,10 @@ public class EnrollmentDAO {
                 }
                 if ("WITHDRAWN".equals(status)) {
                     try (PreparedStatement statement = connection.prepareStatement(
-                            "UPDATE makeup_request SET status = 'CANCELED' "
-                                    + "WHERE student_id = ? AND status IN ('REQUESTED', 'APPROVED')")) {
+                            "UPDATE makeup_request m SET status = 'CANCELLED', cancel_reason = '수강 종료' "
+                                    + "FROM lesson_result lr JOIN enrollment e ON e.id = lr.enrollment_id "
+                                    + "WHERE m.lesson_result_id = lr.id AND e.student_id = ? "
+                                    + "AND m.status IN ('REQUESTED', 'APPROVED')")) {
                         statement.setInt(1, studentId);
                         statement.executeUpdate();
                     }

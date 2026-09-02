@@ -19,8 +19,8 @@ class MakeupGuidancePolicyTest {
     }
 
     @Test void completedAndCanceledRequestsAreTerminal() {
-        assertFalse(MakeupStatus.COMPLETED.canTransitionTo(MakeupStatus.CANCELED));
-        assertFalse(MakeupStatus.CANCELED.canTransitionTo(MakeupStatus.REQUESTED));
+        assertFalse(MakeupStatus.COMPLETED.canTransitionTo(MakeupStatus.CANCELLED));
+        assertFalse(MakeupStatus.CANCELLED.canTransitionTo(MakeupStatus.REQUESTED));
         assertTrue(MakeupStatus.REQUESTED.canTransitionTo(MakeupStatus.COMPLETED));
     }
 }

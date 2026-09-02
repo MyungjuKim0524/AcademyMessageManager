@@ -1,5 +1,7 @@
 # 학원 메시지 관리 시스템 백엔드 리팩토링 증거 문서
 
+> 이 문서의 파일·테스트 수치는 Refactoring 1 v1.1.0 완료 시점의 기준선이다. 이후 PostgreSQL Database Redesign의 신규 테스트와 스키마 변경은 README 및 `docs/database/` 문서를 기준으로 한다.
+
 ## 1. 프로젝트 개요
 
 이 프로젝트는 CSV/XLSX로 전달받은 학원 수업 데이터를 검증하고 Oracle DB에 반영한 뒤, 학생별 학습 안내 메시지를 생성하여 보호자에게 이메일로 발송하는 Java 17 기반 데스크톱 애플리케이션이다.
@@ -311,7 +313,7 @@ Path.of("D:\\AcademyMessageManagerData", "user_mail_credentials.enc");
 
 - 메일 데이터 위치는 `ACADEMY_DATA_DIR` 환경변수를 우선 사용한다.
 - 환경변수가 없으면 사용자 홈의 `.academy-message-manager`를 사용한다.
-- DB 연결 정보는 `ACADEMY_DB_URL`, `ACADEMY_DB_USERNAME`, `ACADEMY_DB_PASSWORD` 환경변수를 파일보다 우선한다.
+- DB 연결 정보는 `DB_URL`, `DB_USER`, `DB_PASSWORD` 환경변수를 파일보다 우선한다.
 - `config.properties.example`에는 값이 아닌 설정 방법만 기록한다.
 - 메일 전송 전 수신 주소·제목·본문을 검증한다.
 

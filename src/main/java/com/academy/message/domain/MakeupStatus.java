@@ -1,7 +1,7 @@
 package com.academy.message.domain;
 
 public enum MakeupStatus {
-    REQUESTED, APPROVED, COMPLETED, CANCELED;
+    REQUESTED, APPROVED, COMPLETED, CANCELLED;
 
     public static MakeupStatus fromNullable(String value) {
         if (value == null || value.isBlank()) return null;
@@ -12,9 +12,9 @@ public enum MakeupStatus {
     public boolean canTransitionTo(MakeupStatus target) {
         if (target == null || this == target) return false;
         return switch (this) {
-            case REQUESTED -> target == APPROVED || target == COMPLETED || target == CANCELED;
-            case APPROVED -> target == COMPLETED || target == CANCELED;
-            case COMPLETED, CANCELED -> false;
+            case REQUESTED -> target == APPROVED || target == COMPLETED || target == CANCELLED;
+            case APPROVED -> target == COMPLETED || target == CANCELLED;
+            case COMPLETED, CANCELLED -> false;
         };
     }
 }
