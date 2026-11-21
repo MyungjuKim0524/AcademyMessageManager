@@ -120,6 +120,13 @@ Remove-Item Env:ACADEMY_TEST_DB_PASSWORD
 - [보안 배포 설정 가이드](docs/deployment/phase11_5_security_deployment_guide.md)
 - [릴리스 준비도·배포 인계](docs/reviews/phase11_4_release_readiness.md)
 
+## 데이터베이스 구조
+
+- **ERD**: [`docs/database/ERD.md`](docs/database/ERD.md)
+  - 테이블 20개를 영역별(학사, 직원·인증·감사, 학부모 안내 메시지, Java 레거시)로 나눈 Mermaid 다이어그램이다.
+  - 코드(SQLAlchemy 모델)에서 자동 생성한다(`backend/scripts/generate_erd.py`).
+- **스키마 변경**: Alembic Migration(`backend/alembic/versions/`, 001~011)으로만 한다. 이력과 원칙은 [Development History 4절](docs/DEVELOPMENT_HISTORY.md#4-database-architecture)에 있다.
+
 ## 샘플 데이터
 
 `data/sample_students.csv`, `data/sample_students.xlsx`, `tests/fixtures/`, `sql/seed_postgresql.sql`의

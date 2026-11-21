@@ -1,5 +1,8 @@
 # Oracle to PostgreSQL Migration Strategy
 
+> **(2026-11-22) 이전 기록**: Java v1.2(PostgreSQL Redesign) 시점의 문서다. 본문의 "ERD v1.2"와 13개 테이블은 그 시점의 설계다.
+> 웹 버전(v2.0.0)의 현재 스키마(테이블 20개)는 [`ERD.md`](ERD.md)를 본다.
+
 ## 1. Background
 
 기존 Oracle DB는 학습용 환경으로 프로젝트 외 테이블이 함께 존재한다. 신규 PostgreSQL DB는 AcademyMessageManager 전용 13개 테이블과 import audit 구조를 사용한다. 따라서 이 작업은 스키마 복제가 아니라 검증된 데이터만 변환하는 ETL이다.

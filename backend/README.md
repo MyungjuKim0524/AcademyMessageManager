@@ -52,6 +52,13 @@ pytest
 
 ## PostgreSQL 개발·테스트 환경
 
+현재 스키마의 ERD는 [`../docs/database/ERD.md`](../docs/database/ERD.md)에 있다. 모델에서 자동 생성하므로, Migration을 추가한 뒤 다시 만든다(DB 연결 불필요).
+
+```powershell
+.\.venv\Scripts\python.exe scripts\generate_erd.py           # ERD.md 다시 생성
+.\.venv\Scripts\python.exe scripts\generate_erd.py --check   # 최신이 아니면 exit 1
+```
+
 Compose는 서로 다른 계정·포트·volume을 사용하는 두 서비스를 실행합니다.
 
 - 개발: `academy_learningops_dev`, `academy_dev`, `127.0.0.1:55431`
