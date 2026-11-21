@@ -1,0 +1,269 @@
+openapi: 3.1.0
+info:
+  title: Academy Message Manager Local API
+  version: 1.3.0
+  description: Local-only API with staff session authentication and RBAC.
+servers:
+  - url: http://127.0.0.1:8080
+paths:
+  /api/auth/login:
+    post:
+      operationId: loginStaff
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/LoginRequest' } } }
+      responses:
+        '200': { description: Authenticated staff profile and secure cookies, content: { application/json: { schema: { $ref: '#/components/schemas/AuthResponse' } } } }
+        '400': { $ref: '#/components/responses/ApiError' }
+        '401': { $ref: '#/components/responses/ApiError' }
+        '429': { $ref: '#/components/responses/ApiError' }
+  /api/auth/logout:
+    post:
+      operationId: logoutStaff
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - { in: header, name: X-CSRF-Token, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Session revoked }
+        '401': { $ref: '#/components/responses/ApiError' }
+        '403': { $ref: '#/components/responses/ApiError' }
+  /api/auth/me:
+    get:
+      operationId: getCurrentStaff
+      security: [{ sessionCookie: [] }]
+      responses:
+        '200': { description: Current staff profile, content: { application/json: { schema: { $ref: '#/components/schemas/AuthResponse' } } } }
+        '401': { $ref: '#/components/responses/ApiError' }
+  /api/imports:
+    get:
+      operationId: listImportHistory
+      security: [{ sessionCookie: [] }]
+      description: Returns privacy-minimal import audit records, newest first.
+      parameters:
+        - { in: query, name: page, schema: { type: integer, minimum: 0, default: 0 } }
+        - { in: query, name: size, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+      responses:
+        '200': { description: Paged import history, content: { application/json: { schema: { $ref: '#/components/schemas/ImportHistoryPage' } } } }
+        '400': { $ref: '#/components/responses/ApiError' }
+        '401': { $ref: '#/components/responses/ApiError' }
+        '403': { $ref: '#/components/responses/ApiError' }
+        '500': { $ref: '#/components/responses/ApiError' }
+  /api/imports/{id}:
+    get:
+      operationId: getImportHistory
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer, format: int64, minimum: 1 } }
+      responses:
+        '200': { description: Import history detail, content: { application/json: { schema: { $ref: '#/components/schemas/ImportHistoryItem' } } } }
+        '400': { $ref: '#/components/responses/ApiError' }
+        '401': { $ref: '#/components/responses/ApiError' }
+        '403': { $ref: '#/components/responses/ApiError' }
+        '404': { $ref: '#/components/responses/ApiError' }
+        '500': { $ref: '#/components/responses/ApiError' }
+  /api/health:
+    get:
+      operationId: getHealth
+      responses:
+        '200':
+          description: API is available
+          content: { application/json: { schema: { $ref: '#/components/schemas/HealthResponse' } } }
+        '403': { $ref: '#/components/responses/ApiError' }
+        '405': { $ref: '#/components/responses/ApiError' }
+        '500': { $ref: '#/components/responses/ApiError' }
+  /api/messages/preview:
+    post:
+      operationId: previewMessage
+      security: [{ sessionCookie: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/MessagePreviewRequest' } } }
+      responses:
+        '200': { description: Generated preview, content: { application/json: { schema: { $ref: '#/components/schemas/MessagePreviewResponse' } } } }
+        '400': { $ref: '#/components/responses/ApiError' }
+        '401': { $ref: '#/components/responses/ApiError' }
+        '413': { $ref: '#/components/responses/ApiError' }
+        '403': { $ref: '#/components/responses/ApiError' }
+        '405': { $ref: '#/components/responses/ApiError' }
+        '415': { $ref: '#/components/responses/ApiError' }
+        '500': { $ref: '#/components/responses/ApiError' }
+  /api/imports/preview:
+    post:
+      operationId: previewImport
+      security: [{ sessionCookie: [] }]
+      description: Parses and validates one CSV/XLSX file in memory. Does not write to the database.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties: { file: { type: string, format: binary } }
+      responses:
+        '200': { description: Row validation preview, content: { application/json: { schema: { $ref: '#/components/schemas/ImportPreviewResponse' } } } }
+        '400': { $ref: '#/components/responses/ApiError' }
+        '401': { $ref: '#/components/responses/ApiError' }
+        '413': { $ref: '#/components/responses/ApiError' }
+        '415': { $ref: '#/components/responses/ApiError' }
+        '403': { $ref: '#/components/responses/ApiError' }
+        '405': { $ref: '#/components/responses/ApiError' }
+        '500': { $ref: '#/components/responses/ApiError' }
+  /api/imports/confirm:
+    post:
+      operationId: confirmImport
+      security: [{ sessionCookie: [] }]
+      description: Reuploads, reparses and revalidates one CSV/XLSX file, then atomically persists it. Preview JSON is never accepted as storage input.
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, format: uuid, maxLength: 36 }
+        - in: header
+          name: X-CSRF-Token
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties: { file: { type: string, format: binary } }
+      responses:
+        '200': { description: Atomic import result or replay of a successful idempotent request, content: { application/json: { schema: { $ref: '#/components/schemas/ImportConfirmResponse' } } } }
+        '400': { $ref: '#/components/responses/ApiError' }
+        '401': { $ref: '#/components/responses/ApiError' }
+        '403': { $ref: '#/components/responses/ApiError' }
+        '409': { $ref: '#/components/responses/ApiError' }
+        '413': { $ref: '#/components/responses/ApiError' }
+        '415': { $ref: '#/components/responses/ApiError' }
+        '500': { $ref: '#/components/responses/ApiError' }
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: academy_session
+  responses:
+    ApiError:
+      description: Safe client-facing error without stack traces or internal paths
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' } } }
+  schemas:
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email: { type: string, format: email, maxLength: 255 }
+        password: { type: string, minLength: 1, maxLength: 1024, writeOnly: true }
+    CurrentStaff:
+      type: object
+      additionalProperties: false
+      required: [id, email, role]
+      properties:
+        id: { type: integer, format: int64 }
+        email: { type: string, format: email }
+        role: { type: string, enum: [ADMIN, TEACHER, ASSISTANT] }
+    AuthResponse:
+      type: object
+      required: [user]
+      properties: { user: { $ref: '#/components/schemas/CurrentStaff' } }
+    HealthResponse:
+      type: object
+      required: [status]
+      properties: { status: { type: string, enum: [UP] } }
+    MessagePreviewRequest:
+      type: object
+      additionalProperties: false
+      required: [studentName, className, classType, lessonDate, attendance]
+      properties:
+        studentName: { type: string, maxLength: 100 }
+        className: { type: string, maxLength: 100 }
+        classType: { type: string, enum: [REGULAR, EXAM_PREP] }
+        lessonDate: { type: string, format: date }
+        testRound: { type: string, maxLength: 50 }
+        attendance: { type: string, enum: [PRESENT, ABSENT, LATE] }
+        preGrade: { type: string, enum: [A, B, C] }
+        weeklyGrade: { type: string, enum: [A, B, C] }
+        correctCount: { type: integer, minimum: 0, maximum: 10000 }
+        totalCount: { type: integer, minimum: 1, maximum: 10000 }
+        includePreGrade: { type: boolean, default: true }
+        includeWeeklyGrade: { type: boolean, default: true }
+        includeTestResult: { type: boolean, default: true }
+    MessagePreviewResponse:
+      type: object
+      required: [message]
+      properties: { message: { type: string } }
+    ImportPreviewResponse:
+      type: object
+      required: [summary, rows]
+      properties:
+        summary:
+          type: object
+          required: [totalRows, validRows, invalidRows]
+          properties: { totalRows: { type: integer }, validRows: { type: integer }, invalidRows: { type: integer } }
+        rows:
+          type: array
+          maxItems: 5000
+          items:
+            type: object
+            required: [rowNumber, data, valid, errors]
+            properties:
+              rowNumber: { type: integer }
+              data:
+                type: object
+                required: [studentName, className]
+                properties: { studentName: { type: string }, className: { type: string } }
+              valid: { type: boolean }
+              errors: { type: array, items: { $ref: '#/components/schemas/FieldError' } }
+    ImportConfirmResponse:
+      type: object
+      required: [importId, summary, replayed]
+      properties:
+        importId: { type: integer, format: int64 }
+        replayed: { type: boolean }
+        summary:
+          type: object
+          required: [total, inserted, updated, skipped]
+          properties:
+            total: { type: integer }
+            inserted: { type: integer }
+            updated: { type: integer }
+            skipped: { type: integer }
+    FieldError:
+      type: object
+      required: [field, code, message]
+      properties: { field: { type: string }, code: { type: string }, message: { type: string } }
+    ImportHistoryItem:
+      type: object
+      required: [importId, status, totalRows, successRows, failedRows, insertCount, updateCount, skipCount, startedAt, createdAt]
+      properties:
+        importId: { type: integer, format: int64 }
+        status: { type: string, enum: [PENDING, PROCESSING, COMPLETED, SUCCESS, FAILED] }
+        totalRows: { type: integer, minimum: 0 }
+        successRows: { type: integer, minimum: 0 }
+        failedRows: { type: integer, minimum: 0 }
+        insertCount: { type: integer, minimum: 0 }
+        updateCount: { type: integer, minimum: 0 }
+        skipCount: { type: integer, minimum: 0 }
+        startedAt: { type: string, format: date-time }
+        finishedAt: { type: [string, 'null'], format: date-time }
+        createdAt: { type: string, format: date-time }
+    ImportHistoryPage:
+      type: object
+      required: [items, page, size, totalElements, totalPages]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/ImportHistoryItem' } }
+        page: { type: integer, minimum: 0 }
+        size: { type: integer, minimum: 1, maximum: 100 }
+        totalElements: { type: integer, format: int64, minimum: 0 }
+        totalPages: { type: integer, minimum: 0 }
+    ApiError:
+      type: object
+      required: [code, message, fields]
+      properties:
+        code: { type: string, enum: [AUTHENTICATION_REQUIRED, SESSION_EXPIRED, INVALID_CREDENTIALS, LOGIN_RATE_LIMITED, FORBIDDEN, CLASSROOM_ACCESS_DENIED, CSRF_FAILED, FILE_REQUIRED, FILE_TOO_LARGE, PAYLOAD_TOO_LARGE, UNSUPPORTED_FILE_TYPE, UNSUPPORTED_MEDIA_TYPE, INVALID_CSV, INVALID_XLSX, ROW_LIMIT_EXCEEDED, INVALID_FILE_CONTENT, IMPORT_PARSE_FAILED, INVALID_IDEMPOTENCY_KEY, IMPORT_VALIDATION_FAILED, IMPORT_CONFLICT, IMPORT_ALREADY_PROCESSED, INVALID_PAGINATION, INVALID_IMPORT_ID, IMPORT_NOT_FOUND, DATABASE_ERROR, DATABASE_UNAVAILABLE, INTERNAL_ERROR, VALIDATION_ERROR, INVALID_JSON, METHOD_NOT_ALLOWED, CORS_FORBIDDEN] }
+        message: { type: string }
+        fields: { type: array, items: { $ref: '#/components/schemas/FieldError' } }

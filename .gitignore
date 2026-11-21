@@ -1,35 +1,81 @@
-# Database & Mail Credentials
+# Java legacy app: not published (docs/phase10-learning-analytics.md, phase11_2_security_audit.md).
+# Root-anchored so frontend/src/ stays. Keep sql/ (Alembic 001 reads sql/schema_postgresql.sql)
+# and tests/fixtures/ (Python contract tests).
+/src/
+/pom.xml
+/scripts/start-backend.ps1
+
+# Maven and compiled output
+target/
+.m2/
+bin/
+*.class
+
+# Private configuration and credentials
 src/main/resources/config.properties
+**/config.properties
 .env
 .env.*
-mail_credentials.enc
-
-# Secret / Certificate Files
-*.key
-*.pem
-*.p12
+!.env.example
+application-local.properties
+*.local
+database.properties
+secrets.properties
+credentials.json
+*.enc
 *.jks
 *.keystore
+*.p12
 *.pfx
-*.enc
+*.pem
+*.key
 
-# Runtime Logs / Exports
-send_logs.csv
-send-log-*.csv
+# Private test data
+data/email_send_test_students.xlsx
+
+# Runtime logs and exported personal data
+*.log
 logs/
 exports/
-*.log
+data/backups/
+send_logs.csv
+send-log-*.csv
 
-# Real Datasets & DB Backups
-data/real_*
+# Database dumps / local databases anywhere in the tree (Phase 11-5 Step 1): data/backups/ holds
+# development DB dumps that may contain real personal data; a copy elsewhere must not be committed.
 *.dump
-*.sql.bak
+*.backup
+*.bak
+*.sqlite
+*.sqlite3
+*.db
 
-# Maven / IDE
-target/
+# Carried over from the Java repository's .gitignore (v2.0.0 pre-upload check, 2026-11-21):
+# the Java app's encrypted Gmail app-password store, and real (non-sample) datasets.
+mail_credentials.enc
+data/real_*
+
+# Tool caches at any level (they also carry their own .gitignore; listed here explicitly)
+.ruff_cache/
+
+# IDE and OS files
+.vscode/
 .idea/
 *.iml
-
-# OS
 .DS_Store
 Thumbs.db
+
+# Frontend dependencies and build output
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+
+# Python backend local environment and generated output
+backend/.venv/
+.dev-data/
+.pytest_cache/
+backend/.pytest_cache/
+backend/.ruff_cache/
+backend/**/__pycache__/
+backend/**/*.py[cod]
+backend/*.egg-info/

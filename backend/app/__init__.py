@@ -1,0 +1,1 @@
+"""Academy LearningOps FastAPI application."""

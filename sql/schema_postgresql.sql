@@ -46,6 +46,10 @@ CREATE INDEX idx_student_name
 CREATE INDEX idx_student_parent_email
     ON student(parent_email);
 
+-- 기존 Swing Import의 학생 동일성 기준(name + school_name)을 DB에서도 보장
+CREATE UNIQUE INDEX uq_student_business_key
+    ON student(name, COALESCE(school_name, ''));
+
 
 -- ============================================================
 -- 2. CLASSROOM
@@ -514,6 +518,12 @@ CREATE TABLE import_job (
     success_rows INTEGER NOT NULL DEFAULT 0,
     failed_rows INTEGER NOT NULL DEFAULT 0,
 
+    request_id UUID,
+    idempotency_key UUID,
+    insert_count INTEGER NOT NULL DEFAULT 0,
+    update_count INTEGER NOT NULL DEFAULT 0,
+    skip_count INTEGER NOT NULL DEFAULT 0,
+
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
 
     started_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -535,6 +545,7 @@ CREATE TABLE import_job (
                 'PENDING',
                 'PROCESSING',
                 'COMPLETED',
+                'SUCCESS',
                 'FAILED'
             )
         ),
@@ -544,7 +555,11 @@ CREATE TABLE import_job (
             total_rows >= 0
             AND success_rows >= 0
             AND failed_rows >= 0
+            AND insert_count >= 0
+            AND update_count >= 0
+            AND skip_count >= 0
             AND success_rows + failed_rows <= total_rows
+            AND insert_count + update_count + skip_count <= total_rows
         ),
 
     CONSTRAINT chk_import_job_finished_at
@@ -562,6 +577,9 @@ CREATE INDEX idx_import_job_started_at
 
 CREATE INDEX idx_import_job_file_hash
     ON import_job(file_hash);
+
+CREATE UNIQUE INDEX uq_import_job_idempotency_key
+    ON import_job(idempotency_key);
 
 
 -- ============================================================

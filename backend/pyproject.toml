@@ -1,0 +1,43 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "academy-learningops-backend"
+version = "0.1.0"
+description = "FastAPI compatibility backend for Academy LearningOps"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "argon2-cffi==25.1.0",
+  # openpyxl parses workbook XML through defusedxml when it is installed (entity / external
+  # reference attacks refused). Already in the environment; declared so deployments have it.
+  "defusedxml==0.7.1",
+  "fastapi==0.162.0",
+  "openpyxl==3.1.5",
+  "pydantic==2.14.2",
+  "python-multipart==0.0.33",
+  "SQLAlchemy==2.1.8",
+  "alembic==1.20.1",
+  "psycopg[binary]==3.3.8",
+  "uvicorn==0.54.0",
+]
+
+[project.optional-dependencies]
+dev = ["httpx==0.28.1", "pytest==9.2.0", "ruff==0.16.9"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+markers = ["postgres: requires the explicitly enabled isolated PostgreSQL test database"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+

@@ -1,0 +1,48 @@
+name: academy-learningops-test
+
+services:
+  postgres-dev:
+    image: postgres:17.6-alpine
+    container_name: academy-learningops-postgres-dev
+    environment:
+      POSTGRES_DB: academy_learningops_dev
+      POSTGRES_USER: academy_dev
+      POSTGRES_PASSWORD: ${ACADEMY_DEV_DB_PASSWORD:?ACADEMY_DEV_DB_PASSWORD is required}
+    ports:
+      - "127.0.0.1:55431:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U academy_dev -d academy_learningops_dev"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - academy_learningops_postgres_dev_data:/var/lib/postgresql/data
+    labels:
+      academy.environment: isolated-development
+      academy.destructive-tests: forbidden
+
+  postgres-test:
+    image: postgres:17.6-alpine
+    container_name: academy-learningops-postgres-test
+    environment:
+      POSTGRES_DB: academy_learningops_test
+      POSTGRES_USER: academy_test
+      POSTGRES_PASSWORD: ${ACADEMY_TEST_DB_PASSWORD:?ACADEMY_TEST_DB_PASSWORD is required}
+    ports:
+      - "127.0.0.1:55432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U academy_test -d academy_learningops_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - academy_learningops_postgres_test_data:/var/lib/postgresql/data
+    labels:
+      academy.environment: isolated-test
+      academy.destructive-tests: allowed
+
+volumes:
+  academy_learningops_postgres_dev_data:
+    name: academy_learningops_postgres_dev_data
+  academy_learningops_postgres_test_data:
+    name: academy_learningops_postgres_test_data

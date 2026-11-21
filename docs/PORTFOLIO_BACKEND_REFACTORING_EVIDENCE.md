@@ -1,6 +1,10 @@
 # 학원 메시지 관리 시스템 백엔드 리팩토링 증거 문서
 
 > 이 문서의 파일·테스트 수치는 Refactoring 1 v1.1.0 완료 시점의 기준선이다. 이후 PostgreSQL Database Redesign의 신규 테스트와 스키마 변경은 README 및 `docs/database/` 문서를 기준으로 한다.
+>
+> **(2026-11-21 추가)** 이 문서는 Java 데스크톱 버전의 기록이며, 기존 Java 저장소 `v1.2.0`의 같은 파일과 내용이 같다.
+> - 본문의 Java 코드 경로(`src/main/java/...`)는 기존 저장소의 태그 기준이다. 현재 웹 저장소에는 Java 코드가 포함되어 있지 않다.
+> - 이 문서의 문제들이 FastAPI·React 웹에서 어떻게 이어졌는지, 무엇이 남거나 빠졌는지는 [Development History 9절](DEVELOPMENT_HISTORY.md#9-legacy--web-비교-개선-항목별-근거)에 있다.
 
 ## 1. 프로젝트 개요
 

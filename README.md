@@ -1,154 +1,151 @@
 # Academy Message Manager
 
-Java Swing 기반 성적 안내 메시지 자동 생성 및 발송 관리 프로그램입니다.
+## 현재 제품 방향
 
-이 저장소는 **Refactoring 1 (버전 1.1.0)** 이후 **PostgreSQL Database Redesign을 완료한 결과물**입니다. Swing/JDBC 구조는 유지하며 Spring Boot, REST API, React 전환은 아직 구현하지 않았습니다.
-
-백엔드는 비즈니스 규칙(`domain`), 유스케이스(`service`), 외부 경계(`port`), PostgreSQL JDBC 구현(`dao`)으로 분리되어 있습니다. 리팩토링 근거는 [백엔드 요구사항](docs/BACKEND_REQUIREMENTS.md), [Business Rule Refactoring](docs/refactoring/01-business-readable-refactoring.md), [Backend Architecture Refactoring](docs/refactoring/02-backend-architecture-refactoring.md)을 참고하세요. 두 문서는 모두 Refactoring 1 안의 세부 작업입니다.
-
-포트폴리오 제출용 문제 해결 과정과 코드·테스트 증거는 [백엔드 리팩토링 증거 문서](docs/PORTFOLIO_BACKEND_REFACTORING_EVIDENCE.md)에 정리되어 있습니다.
-
-## 아키텍처 변화
+현재 주 개발 경로는 **FastAPI + React + PostgreSQL 모듈형 모놀리스**다. 처음 만든 Java/Swing/JDBC
+프로그램은 Import 업무 규칙과 회귀 계약을 옮겨 오기 위한 기준선으로만 쓰였고, **이 저장소에는
+포함하지 않는다**(아래 [Java 레거시](#java-레거시-저장소-미포함) 참고).
 
 ```text
-Before: Swing 화면 → 서비스/업무 규칙/SQL 혼재 → Oracle·SMTP
-
-After : Swing 화면 → service → domain
-                         ↓
-                        port
-                         ↓
-                   dao / PostgreSQL·SMTP
+React → FastAPI Router → Service(업무·트랜잭션) → Repository(SQLAlchemy) → PostgreSQL
+                         Authorization(서버 세션·CSRF·RBAC·담당 반 범위)
 ```
 
-핵심 개선 사항은 도메인·유스케이스 분리, DAO 연결 제공자 주입, PostgreSQL 전용 관계 모델, import audit, 발송 시도 이력입니다. Java 17, Swing, Maven, JDBC, Jakarta Mail 구성은 유지하며 `test 결과` 입력은 내부에서 `correct_count/total_count`로 변환합니다.
+Phase 6A는 ADMIN의 반·학생·수강·최소 직원 배정과 TEACHER/ASSISTANT의 담당 반 학생
+조회까지 구현한다. 쓰기 API는 ADMIN 세션과 CSRF가 모두 필요하며, 목록도 서버가 배정 기간과
+역할로 범위를 제한한다. 교직원 조회 응답에는 보호자 이름·이메일을 포함하지 않는다.
 
-## 보안 개선
+- `POST /api/classrooms`, `POST /api/students`
+- `POST /api/classrooms/{id}/enrollments`, `POST /api/classrooms/{id}/assignments`
+- `GET /api/classrooms/{id}/students?limit=50&offset=0`
+- React `/students`: 위 업무 흐름과 담당 반 학생 목록
 
-- DB/메일 비밀값을 로컬 설정 및 암호화 파일로 분리하고 Git 추적에서 제외
-- CSV 내보내기 시 `=`, `+`, `-`, `@` 시작값의 수식 주입 방어
-- 외부 연동 실패의 상세 예외는 내부 로그에 기록하고 사용자에게는 일반화된 메시지 표시
-- 샘플 데이터는 `example.invalid`를 포함한 가상 정보만 사용
+DB 변경은 Alembic `003_phase6a_enrollment_integrity` 하나이며 학생·반 조합의 동시 중복을
+DB UNIQUE 인덱스로 차단한다. 적용 전에 기존 중복을 읽기 전용으로 진단하며 개발 DB에
+자동 적용하거나 데이터를 자동 정리하지 않는다. 관리자 계정이 없으면 비밀값을 파일이나
+명령 기록에 넣지 말고 `scripts/bootstrap-admin.ps1`을 사용한다.
 
-## 현재 구현된 범위
+이후 Phase 6B~11에서 기능을 차례로 구현했고, 모두 완료됐다. 현재는 Phase 11-5(배포) 준비 단계다.
+- Phase 6B: 직원·담당 반 배정
+- Phase 7: 수업·출결·성적
+- Phase 8: 템플릿·초안·검토·모의 발송
+- Phase 9: 누락 탐지·처리 상태·실패 재시도
+- Phase 10: 출결·성적 분석
+- Phase 11: 통합·보안·정합성·성능 점검과 릴리스 준비
 
-- `.xlsx` Excel 성적 데이터 불러오기
-- CSV 성적 데이터 불러오기
-- 필수 컬럼 및 값 검증
-- JTable 데이터 미리보기
-- PostgreSQL DB 저장
-- 분반, 학생, 수강 상태, 수업 회차, 성적 기록 관리
-- `INSERT / UPDATE / SKIP` 기반 중복 저장 방지
-- 정규 수업 / 내신 대비 메시지 자동 생성
-- 예습, 주간 과제, 테스트 결과 전체 공백 컬럼 자동 제외
-- DB 템플릿 기반 메시지 생성
-- 템플릿 조회 및 수정
-- 전체 학생 메시지 생성 및 학생별 내용 수정
-- 이메일 발송 화면에서 개별 체크박스 또는 전체 선택/해제
-- Gmail SMTP 기반 이메일 발송
-- 퇴원 학생 기본 발송 제외
-- 이메일 없음/형식 오류 학생 발송 제외
-- 발송 성공/실패/제외 로그 저장 및 조회
-- 실패 건 재시도
-- 발송 로그 CSV 저장
-- 결석 학생 기반 보강 신청 관리
-- 퇴원/휴원 학생 보강 대상 자동 제외
-- 학생 관리 탭에서 이메일 및 수강 상태 수정
-- 퇴원 처리 시 미완료 보강 신청 자동 취소
+Kafka, Redis, MSA, Kubernetes, 실제 이메일/SMS 발송은 보류 또는 범위 밖이다.
 
-## VS Code 실행 방법
+전체 개발 이력과 현재 상태는 [Development History](docs/DEVELOPMENT_HISTORY.md)를 참고한다.
+Phase 6A 세부 내용은 [Phase 6A 보고서](docs/phase6a-student-enrollment-vertical-slice.md)에 있다.
 
-1. 이 저장소를 클론한 뒤 VS Code에서 저장소 루트 폴더를 엽니다.
-2. Java Extension Pack이 없다면 설치합니다.
-3. Maven이 없다면 Apache Maven을 설치하고 `mvn -version`으로 확인합니다.
-4. 터미널에서 `mvn compile`을 실행해 의존성을 내려받습니다.
-5. `src/main/java/com/academy/message/Main.java`를 열고 `Run`을 누릅니다.
-6. 프로그램에서 `data/sample_students.xlsx` 또는 `data/sample_students.csv`를 선택해 테스트합니다.
+### D드라이브 개발 데이터 정책
 
-## 터미널 실행
+프로젝트와 기존 Python 가상환경, Node 의존성 및 빌드 결과는 D드라이브에 유지한다. 테스트나
+의존성 명령 전 아래 스크립트를 현재 PowerShell 세션에만 dot-source하면 pip/npm/Ruff/pytest,
+coverage와 임시 파일이 Git 제외 경로인 `.dev-data` 아래에 저장된다. 사용자·시스템 전역
+환경변수는 변경하지 않는다. 기존 정상 가상환경과 `node_modules`는 재설치하지 않는다.
 
 ```powershell
-mvn exec:java
+. .\scripts\use-d-drive-dev-env.ps1
 ```
 
-## PostgreSQL DB 연결 준비
+Docker Desktop의 WSL 데이터 위치는 현재 `D:\DockerData\DockerDesktopWSL`로 설정되어 있다.
+컨테이너·볼륨·VHDX는 검증 작업에서 이동·삭제·초기화하지 않는다.
 
-1. PostgreSQL에 `academy_message_manager` 테스트 DB와 전용 사용자를 준비합니다.
-2. [sql/schema_postgresql.sql](sql/schema_postgresql.sql)을 실행해 테이블을 생성합니다.
-3. 선택적으로 [sql/seed_postgresql.sql](sql/seed_postgresql.sql)을 실행해 비식별 샘플 데이터를 추가합니다.
-4. `src/main/resources/config.properties.example` 파일을 복사해 `config.properties`로 이름을 바꿉니다.
-5. DB 접속 정보가 다르면 아래 값을 수정하거나 `DB_URL`, `DB_USER`, `DB_PASSWORD` 환경변수를 설정합니다.
+## 현재 개발 비용·외부 연동 정책
 
-```properties
-db.url=jdbc:postgresql://localhost:5432/academy_message_manager
-db.username=YOUR_DB_USERNAME
-db.password=YOUR_DB_PASSWORD
-mail.smtp.host=smtp.gmail.com
-mail.smtp.port=587
+이 저장소의 LearningOps 고도화는 개인 학습·취업 포트폴리오 목적으로 기존 로컬 환경과 무료
+오픈소스만 사용한다. 유료 cloud/SaaS/API/DB를 생성하거나 배포하지 않으며 Docker Compose
+로컬 환경까지만 다룬다. FastAPI 개발과 테스트에서는 실제 이메일·SMS를 발송하지 않고 Mock
+adapter만 사용한다(`backend/app/modules/notifications/sender.py`).
+Codex 모델 사용량과 계정 과금은 저장소로 통제할 수 없으므로 사용자가 직접 확인한다.
+
+실제 학원 업무가 문자 중심인 점을 반영해, 보호자 휴대전화번호 기반 SMS/LMS 발송으로의 전환을
+향후 검토 과제로 관리한다(미구현). 실제 발송 API 연동 전에는 외부 발송 I/O와 DB 트랜잭션 분리가
+선행되어야 한다. 배경과 검토 범위는 [Development History — Future Roadmap](docs/DEVELOPMENT_HISTORY.md#8-future-roadmap)을 참고한다.
+
+## 로컬 실행
+
+요구 사항: Python 3.12 이상, Node.js(로컬 검증 24.x)와 npm, Docker Desktop(PostgreSQL 컨테이너).
+백엔드 준비·설치·환경변수는 [backend/README.md](backend/README.md)와 `backend/.env.example`,
+프론트엔드 환경변수는 `frontend/.env.example`을 참고한다.
+
+```powershell
+.\scripts\migrate-dev-db.ps1    # 개발 DB에 Alembic Migration 적용
+.\scripts\bootstrap-admin.ps1   # 최초 관리자 생성(ACADEMY_BOOTSTRAP_EMAIL·PASSWORD를 현재 세션에만 설정)
+.\scripts\start-fastapi.ps1     # FastAPI 127.0.0.1:8000
+.\scripts\start-frontend.ps1    # React(Vite) 127.0.0.1:5173, /api는 FastAPI로 proxy
 ```
 
-6. 프로그램에서 Excel/CSV를 불러온 뒤 `DB 업데이트 실행`을 누릅니다.
-
-최종 ERD는 `PostgreSQL ERD v1.2.drawio`이며, `makeup_request.target_lesson_id`를 nullable FK로 두어 보강 요청 생성 후 대상 수업을 배정할 수 있습니다. DDL과 ERD 모두 `target_lesson_id → lesson(id)` 및 조회용 인덱스를 반영합니다.
-
-메일 발송을 실제로 사용하려면 Gmail 2단계 인증과 앱 비밀번호가 필요합니다.
-프로그램의 `메일 설정` 탭에서 계정과 앱 비밀번호를 입력하고 마스터 암호로 암호화해 저장합니다.
-암호화 파일은 `ACADEMY_DATA_DIR` 환경변수로 지정한 폴더에 저장됩니다. 환경변수가 없으면 사용자 홈의 `.academy-message-manager` 폴더를 사용하며 제출 프로젝트에는 포함되지 않습니다.
-마스터 암호는 저장되지 않으므로 잊으면 암호화 파일을 삭제하고 다시 설정해야 합니다.
-
-## Excel / CSV 컬럼
-
-`data/sample_students.csv`와 `data/sample_students.xlsx`의 인물·학교·이메일은 모두 테스트용 가상 데이터입니다. `example.invalid` 주소는 실제 메일이 발송되지 않는 예약 도메인입니다.
-
-```csv
-분반명,수업유형,수업일자,시험회차,이름,학교명,수강상태,출석 여부,보호자명,보호자 이메일,예습 과제 등급,주간 과제 등급,test 결과
-```
-
-수업유형은 `정규`, `내신 대비`로 입력할 수 있으며, 기존 `REGULAR`, `EXAM_PREP` 값도 호환됩니다.
-수강상태는 `재원`, `휴원`, `퇴원`으로 입력할 수 있으며, 기존 `ACTIVE`, `PAUSED`, `WITHDRAWN` 값도 호환됩니다.
-
-## 주요 화면
-
-- `데이터 불러오기`: Excel/CSV 불러오기, 검증, PostgreSQL DB 업데이트 및 import audit 기록
-- `메시지 생성`: 전체 메시지 생성 및 학생별 내용 수정
-- `이메일 발송`: 최신 이메일 및 수강 상태 확인, 개별/전체 대상 선택, 선택 대상 이메일 발송
-- `발송 내역`: 발송 로그 검색, 실패 건 재시도, CSV 저장
-- `템플릿 설정`: 수업 유형 선택 시 DB 템플릿 자동 불러오기 및 저장
-- `보강 관리`: 결석 학생 보강 신청, 완료, 취소
-- `학생 관리`: 분반별 학생 조회, 이메일 및 수강 상태 수정
-- `메일 설정`: 발송자 Gmail 계정과 앱 비밀번호 암호화 저장, Gmail 주소를 발신 주소로 사용
-
-발송 상태는 화면에서 `발송 성공`, `발송 실패`, `발송 제외`로 표시되며 DB에는 각각 `SENT`, `FAILED`, `SKIPPED`로 저장됩니다.
-
-## 향후 로드맵
-
-1. **Backend Modernization**: Spring Boot와 REST API 도입
-2. **Web Frontend**: React 기반 사용자 화면 전환
-3. **Production Readiness**: Docker, CI/CD, 보안 강화, 클라우드 배포
-
-위 항목은 향후 계획이며 Refactoring 1 완료 범위에는 포함되지 않습니다.
+각 스크립트는 개발 DB 컨테이너(`academy-learningops-postgres-dev`, `127.0.0.1:55431`)의
+라벨·포트를 확인한 뒤에만 실행되며, DB 비밀번호를 출력하지 않는다.
 
 ## 테스트
 
-JDK 17 이상과 Maven 환경에서 다음 명령을 실행합니다.
-
 ```powershell
-mvn test
+. .\scripts\use-d-drive-dev-env.ps1
+
+# 백엔드 단위 테스트·린트 (DB 불필요)
+cd backend
+.\.venv\Scripts\pytest.exe -m "not postgres"
+.\.venv\Scripts\ruff.exe check .
+cd ..
+
+# 프론트엔드
+cd frontend
+npm run lint
+npm test
+npm run build
+cd ..
 ```
 
-단위 테스트는 도메인 상태 변환, 보강 자격·상태 전이, 점수 파싱·검증·표현, 메시지 구성, 입력 데이터 검증, CSV 수식 주입 방어를 확인합니다.
+위 단계를 한 번에 실행하려면 `.\scripts\verify-all.ps1`을 사용한다(Ruff → pytest → lint → Vitest → build, DB 불필요).
 
-실제 PostgreSQL DAO 통합 테스트는 DB 접속 환경변수와 실행 플래그를 설정한 뒤 수행합니다. 테스트는 스키마가 적용된 전용 테스트 DB의 관련 테이블을 `TRUNCATE`하므로 운영 DB에는 실행하지 마세요.
+PostgreSQL 통합 테스트는 **격리 테스트 DB**(`academy-learningops-postgres-test`, `127.0.0.1:55432`,
+라벨 `academy.environment=isolated-test`)에서만 실행된다. 일부 테스트가 테이블을 `TRUNCATE`하므로
+다른 DB에는 실행하지 않는다. 스크립트가 컨테이너 라벨·포트·DB 이름·사용자를 확인하고, 하나라도
+다르면 실행을 거부한다.
 
 ```powershell
-$env:DB_URL = "jdbc:postgresql://localhost:5432/academy_message_manager"
-$env:DB_USER = "YOUR_DB_USERNAME"
-$env:DB_PASSWORD = "YOUR_DB_PASSWORD"
-$env:RUN_POSTGRES_INTEGRATION = "true"
-mvn -Dtest=PostgreSqlDaoIntegrationTest test
+$env:ACADEMY_TEST_DB_PASSWORD = '<로컬 테스트 DB 비밀번호>'   # 현재 세션에만
+.\scripts\run-postgres-integration.ps1
+Remove-Item Env:ACADEMY_TEST_DB_PASSWORD
 ```
 
-이 통합 테스트는 CSV/XLSX import, 학생·분반·수강·수업·성적 CRUD, DB 템플릿 메시지 생성, nullable `target_lesson_id` 보강 처리, 발송 이력·시도 저장, FK 위반 거부 및 트랜잭션 롤백을 실제 PostgreSQL에서 확인합니다. `RUN_POSTGRES_INTEGRATION`이 없으면 공개 저장소의 기본 `mvn test`에서는 안전하게 건너뜁니다.
+## 배포
+
+배포 실행 모드(`ACADEMY_DB_MODE=production`), 필수 환경변수, 실행 명령과 배포 후 점검 절차는
+다음 문서를 따른다.
+
+- [보안 배포 설정 가이드](docs/deployment/phase11_5_security_deployment_guide.md)
+- [릴리스 준비도·배포 인계](docs/reviews/phase11_4_release_readiness.md)
+
+## 샘플 데이터
+
+`data/sample_students.csv`, `data/sample_students.xlsx`, `tests/fixtures/`, `sql/seed_postgresql.sql`의
+인물·학교·이메일은 모두 테스트용 가상 데이터다. `example.invalid` 주소는 실제 메일이 발송되지 않는
+예약 도메인이다. 실제 학생·보호자 정보는 저장소에 넣지 않는다.
+
+## Java 레거시 (저장소 미포함)
+
+이 프로젝트는 Java 17 · Swing · JDBC · Maven으로 만든 성적 안내 메시지 생성·발송 프로그램에서
+시작했다. 업무 규칙과 회귀 계약을 FastAPI로 옮긴 뒤에는 기준선으로만 쓰였고, Java 소스(`src/`)와
+빌드 설정(`pom.xml`)은 이 저장소에 포함하지 않는다(`.gitignore`). 따라서 Java 빌드·실행·테스트
+절차도 이 문서에서 제외했다.
+
+버전별 발전 과정(v1.0-legacy → v1.1.0 → v1.2.0 → FastAPI·React)과 항목별 비교(Before → Problem →
+Decision → After → Validation → Trade-off), 웹에서 빠지거나 약해진 기능은
+[Development History 2절](docs/DEVELOPMENT_HISTORY.md#2-architecture-evolution)과
+[9절](docs/DEVELOPMENT_HISTORY.md#9-legacy--web-비교-개선-항목별-근거)에 정리했다.
+
+Java 시절에서 이어져 지금도 쓰이는 파일만 남아 있다.
+
+- `sql/schema_postgresql.sql`: Alembic 첫 Migration `001_java_schema_baseline`이 읽는 기준 스키마
+- `tests/fixtures/contract/`: Python 계약 테스트(`backend/tests/test_contract_fixtures.py`)가 읽는 fixture
+- `docs/`의 리팩토링·마이그레이션 기록(예: [백엔드 리팩토링 증거](docs/PORTFOLIO_BACKEND_REFACTORING_EVIDENCE.md),
+  [Development History](docs/DEVELOPMENT_HISTORY.md)). 문서가 가리키는 Java 소스 경로는 이 저장소에 없다.
 
 ## 운영 전 개인정보 보호 확인
 
-현재 프로젝트의 샘플 데이터는 모두 가상 정보입니다. 실제 운영 환경에서는 발송 로그에 포함되는 보호자 이메일과 메시지 내용에 대해 보존 기간, 접근 권한 및 삭제 절차를 별도로 적용해야 합니다.
+현재 프로젝트의 샘플 데이터는 모두 가상 정보다. 실제 운영 환경에서는 메시지 본문과 보호자 연락처에
+대해 보존 기간, 접근 권한 및 삭제 절차를 별도로 적용해야 한다.
