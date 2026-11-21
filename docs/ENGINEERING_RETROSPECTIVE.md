@@ -280,7 +280,7 @@ Definition of Done에 transaction, rollback, security boundary, test isolation, 
 ### Problem
 
 Java 버전(v1.0~v1.2)의 보강 관리 기능은 FastAPI·React 웹 버전으로 이식되지 않았다.
-- Java에 있던 것: 신청·승인·완료·취소 상태 전이, 재원생만 신청, 상태별 보호자 안내 문구
+- Java에 있던 것: 화면의 보강 신청·완료·취소(상태 규칙에는 승인 포함), 재원생만 신청, 상태별 보호자 안내 문구
 - 웹에 있는 것: `makeup_request` 테이블 모델과, 결석일 때 넣는 고정 문장 하나(`DEVELOPMENT_HISTORY.md` 9.9절)
 
 ### Cause (개발자 회고)

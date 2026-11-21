@@ -32,6 +32,20 @@ v2.0.0은 같은 업무를 여러 직원이 역할에 맞게 나눠 쓰는 웹�
 
 권한은 서버가 판정합니다. 선생님·조교는 배정된 반의 데이터만 볼 수 있습니다.
 
+## 화면
+
+> 모든 화면은 가상 데이터로 촬영했습니다.
+
+**대시보드**: 오늘 수업과 남은 성적 안내 할 일
+
+<img src="docs/images/web-dashboard.png" alt="대시보드" width="820">
+
+| 출결 입력 | 주간 엑셀 업로드 |
+|---|---|
+| <img src="docs/images/web-attendance.png" alt="출결 입력" width="400"> | <img src="docs/images/web-excel-upload.png" alt="엑셀 업로드" width="400"> |
+| **메시지 처리 현황**(검토·확정·모의 발송) | **출결 분석** |
+| <img src="docs/images/web-message-status.png" alt="메시지 처리 현황" width="400"> | <img src="docs/images/web-attendance-analytics.png" alt="출결 분석" width="400"> |
+
 ## 아키텍처
 
 ```text
@@ -66,6 +80,15 @@ PostgreSQL 17 (FK·CHECK·UNIQUE·EXCLUDE 제약, Alembic Migration 001~011)
 | `v1.1.0` | 2026-09-01 | 도메인·포트 계층 분리, 단위 테스트 도입(Refactoring 1) |
 | `v1.2.0` | 2026-09-03 | PostgreSQL 재설계 |
 | `v2.0.0` | 2026-11-21 | FastAPI + React 웹서비스로 전환 |
+
+**Java v1.x → 웹 v2.0.0 비교**
+
+| 업무 | Java 데스크톱(v1.x) | 웹(v2.0.0) |
+|---|---|---|
+| 성적 안내 메시지 | 전체 생성 → 학생별 수정 → 발송 대상 선택·확인 → Gmail로 실제 발송. 발송 로그·실패 재시도 | 초안 → 검토 → **확정(승인 기록)** → 모의 발송. 원본이 바뀌면 발송 차단, 중복 발송 방지, 반 단위 일괄 처리 |
+| | <img src="docs/images/java-message-generation.png" alt="Java 메시지 생성" width="380"> | <img src="docs/images/web-message-status.png" alt="웹 메시지 처리 현황" width="380"> |
+| 학생 관리 | 한 PC에서 분반별 학생 조회·수정 | 관리자가 학생·수강을 등록하고, 선생님·조교는 담당 반만 조회 |
+| | <img src="docs/images/java-students.png" alt="Java 학생 관리" width="380"> | <img src="docs/images/web-students.png" alt="웹 학생 관리" width="380"> |
 
 v1.x의 Java 코드는 이 브랜치에 포함하지 않고, 각 태그에 남아 있습니다. 버전별 비교와 개선 근거는 [Development History 2·9절](docs/DEVELOPMENT_HISTORY.md#9-legacy--web-비교-개선-항목별-근거)에 있습니다.
 

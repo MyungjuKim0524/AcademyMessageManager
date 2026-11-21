@@ -15,7 +15,7 @@
 
 Academy LearningOps는 Java Swing 기반 학원 업무 자동화 프로그램을 React와 FastAPI 기반
 웹서비스로 전환한 프로젝트다.
-- 기존 Java 프로그램(v1.0~v1.2)은 성적 데이터 불러오기, 메시지 생성, 이메일 발송, 보강 관리 업무를 처리하는 단일 사용자 데스크톱 앱이다.
+- 기존 Java 프로그램(v1.0~v1.2)은 단일 사용자 데스크톱 앱이다. 화면은 탭 8개였다: 데이터 불러오기, 메시지 생성, 이메일 발송, 발송 내역, 템플릿 설정, 보강 관리, 학생 관리, 메일 설정(`MainFrame.java`).
   - DB: v1.0·v1.1은 Oracle, v1.2부터 PostgreSQL
   - 이메일 발송: Jakarta Mail로 Gmail SMTP에 접속하는 방식(Gmail API가 아니다)
 
@@ -43,7 +43,7 @@ Java 코드는 이 저장소에 포함하지 않는다(`.gitignore`의 `/src/`, 
 | 출결·성적 분석, 관심 필요 학생, 학생 학습 리포트, 대시보드 할 일 | 구현 | `backend/app/modules/analytics/` |
 | 구 CSV/XLSX 가져오기(`/api/imports*`) | **제거**(Phase 9.6, 사용자 승인) | `docs/phase9-6-ux-workflow-report.md` |
 | 실제 이메일·SMS 발송 | 미구현(모의 발송만). Java 버전의 Gmail SMTP 실발송은 이식하지 않음 | 8절 향후 검토 과제 |
-| 보강 신청 관리(Java v1.x: 신청·승인·완료·취소 상태 전이, 상태별 안내 문구) | **미이식**. `makeup_request` 테이블 모델만 있고 API·화면이 없다. 메시지는 결석일 때 고정 문장 하나만 넣는다 | `backend/app/modules/notifications/engine.py`(`MAKEUP_SENTENCE`), 9.9절 |
+| 보강 신청 관리(Java v1.x: 화면에서 신청·완료·취소, 상태 규칙에는 승인 포함, 상태별 안내 문구) | **미이식**. `makeup_request` 테이블 모델만 있고 API·화면이 없다. 메시지는 결석일 때 고정 문장 하나만 넣는다 | `backend/app/modules/notifications/engine.py`(`MAKEUP_SENTENCE`), 9.9절 |
 | 발송 이력 전용 화면(`/deliveries`) | 미구현(Coming Soon 화면) | `frontend/src/app/router.tsx` |
 | Kafka 이벤트 | 미구현(보류) | 의존성·코드 없음. 보류 결정은 `docs/phase6-event-architecture-design.md` |
 | AI 기능 | 미구현(향후 검토, 범위 미정) | 8절, `docs/ENGINEERING_RETROSPECTIVE.md` 1절 |
@@ -613,7 +613,7 @@ MMS는 이미지 등 멀티미디어 발송 요구사항이 확인될 때만 추
 
 | 구분 | 상태 | 근거 |
 |---|---|---|
-| Java v1.x 실제 발송 | **Jakarta Mail SMTP(Gmail)**. Gmail API가 아니다. 화면에서 선택한 학생에게 동기 호출로 바로 발송한다 | `EmailSendService.java`(`Transport.send`), `MainFrame.java` |
+| Java v1.x 실제 발송 | **Jakarta Mail SMTP(Gmail)**. Gmail API가 아니다. 발송 대상을 고르고 확인 창을 거친 뒤, 화면 처리 중에 동기 호출로 발송한다 | `EmailSendService.java`(`Transport.send`), `MainFrame.java` |
 | 현재 웹 발송 | **`MockSender`만 있다.** 네트워크로 나가는 발송은 없다. 시도 기록의 `channel`은 CHECK로 `'MOCK'`만 허용한다 | `notifications/sender.py`, `db/models/tables.py`(`chk_notification_send_attempt_channel`) |
 | 향후 계획 | 보호자 휴대전화 기반 SMS/LMS. 공급자·비용·일정은 미정 | 8절 |
 | SMS 도입 전 필수 과제 | **INT-I1**: 지금은 외부 발송 I/O가 DB 트랜잭션·행 잠금 안에서 호출된다. 분리하지 않으면 실발송 후 commit이 실패할 때 기록 없는 발송과 재시도 시 이중 발송이 생길 수 있다 | `docs/reviews/phase11_3_integrity_audit.md` |
@@ -623,7 +623,7 @@ MMS는 이미지 등 멀티미디어 발송 요구사항이 확인될 때만 추
   - v1.2 스키마에도 발송 관련 UNIQUE는 `(delivery_job_id, attempt_no)`뿐이다. 멱등 키나 메시지당 성공 1회 제약이 없다.
   - 그래서 같은 학생에게 두 번 발송하는 것을 DB가 막지 않는다. **(추정: 코드 관찰. 재현하지 않음)**
 - **Problem**:
-  - 검토·확정 단계 없이 생성 후 바로 발송한다.
+  - 학생별 메시지를 수정·저장하고 발송 전 확인 창을 거치지만, "검토 완료·확정" 같은 **저장되는 상태(누가 언제 확정했는지)**는 없다. 그래서 여러 직원이 나눠 검토하거나 확정한 메시지만 발송하도록 막을 수 없다.
   - 생성 뒤 출결·성적이 바뀌어도 이미 만든 본문으로 발송된다. 웹에서는 이 문제를 H1으로 재현·수정했다(Phase 10.5).
 - **Decision**:
   - 발송 채널 연동보다 상태 전이·검토·멱등성·정합성을 먼저 구현했다(3절 Phase 8~9, 2절 "FastAPI 전환 의사결정" 4번).
@@ -677,7 +677,7 @@ MMS는 이미지 등 멀티미디어 발송 요구사항이 확인될 때만 추
 ### 9.9 웹에서 빠지거나 약해진 것
 
 - **보강 신청 관리 미이식**: Java v1.x의 기능이 웹에는 없다.
-  - Java에 있던 것: 신청·승인·완료·취소 상태 전이, 재원생만 신청, 퇴원 시 미완료 보강 취소, 상태별 보호자 안내 문구(`MakeupDAO`, `MakeupGuidancePolicy`, `docs/BACKEND_REQUIREMENTS.md`)
+  - Java에 있던 것: 화면의 보강 신청·완료·취소(상태 규칙에는 신청 → 승인 → 완료/취소 포함, 승인 버튼은 없음), 재원생만 신청, 퇴원 시 미완료 보강 취소, 상태별 보호자 안내 문구(`MakeupDAO`, `MakeupGuidancePolicy`, `docs/BACKEND_REQUIREMENTS.md`)
   - 웹에 있는 것: `makeup_request` 테이블 모델과, 결석일 때 넣는 고정 문장 하나(`engine.py`의 `MAKEUP_SENTENCE`)뿐이다.
   - **원인(개발자 회고, `docs/ENGINEERING_RETROSPECTIVE.md` 9절)**:
     - 의도적으로 제외한 것이 아니다. 기존 기능의 이식 범위를 충분히 확인하지 못해 생긴 **누락**이다.
