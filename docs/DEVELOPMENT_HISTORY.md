@@ -45,7 +45,7 @@ Java 코드는 이 저장소에 포함하지 않는다(`.gitignore`의 `/src/`, 
 | 실제 이메일·SMS 발송 | 미구현(모의 발송만). Java 버전의 Gmail SMTP 실발송은 이식하지 않음 | 8절 향후 검토 과제 |
 | 보강 신청 관리(Java v1.x: 신청·승인·완료·취소 상태 전이, 상태별 안내 문구) | **미이식**. `makeup_request` 테이블 모델만 있고 API·화면이 없다. 메시지는 결석일 때 고정 문장 하나만 넣는다 | `backend/app/modules/notifications/engine.py`(`MAKEUP_SENTENCE`), 9.9절 |
 | 발송 이력 전용 화면(`/deliveries`) | 미구현(Coming Soon 화면) | `frontend/src/app/router.tsx` |
-| Kafka 이벤트 | 미구현(보류) | 의존성·코드 없음, `README.md` 범위 밖 |
+| Kafka 이벤트 | 미구현(보류) | 의존성·코드 없음. 보류 결정은 `docs/phase6-event-architecture-design.md` |
 | AI 기능 | 미구현(향후 검토, 범위 미정) | 8절, `docs/ENGINEERING_RETROSPECTIVE.md` 1절 |
 
 React 메뉴(`frontend/src/layout/AppLayout.tsx`):
@@ -233,6 +233,12 @@ Java 경로(Swing / Java HttpServer → service → port → JDBC → PostgreSQL
   - 반별 학생 표: "메일 주소 변경" 열을 "휴원 관리" 앞으로 옮겼다.
   - 직원 목록 계정 관리 버튼 순서: 이름 수정 → 재설정 코드 → 비활성화 → 삭제
   - 출결 분석: "기록 완료율"을 "출결 입력 완료율"로, 보조 문구를 "입력 n / 대상 m"으로 바꿨다. 계산식(`record_rate`)은 그대로다.
+
+- **v2.0.0 업로드 후 문서 정비**(2026-11-21~22)
+  - v2.0.0: 커밋 `ca15e62`와 태그 `v2.0.0`을 GitHub `main`에 일반 Push했다(기존 이력·태그 보존).
+  - ERD: 코드에서 자동 생성하는 `docs/database/ERD.md`를 추가했다(`backend/scripts/generate_erd.py`). 이전 ERD는 Java v1.2 기록으로 표시했다.
+  - Migration 절차 보완: 001이 루트의 `sql/`을 읽는다는 점, 007의 `btree_gist` 확장 권한을 배포 가이드 4절과 릴리스 준비도 5·7절에 추가했다.
+  - README 재구성: 소개·기능·아키텍처·버전 이력 중심으로 바꿨다. 로컬 환경·테스트·개발 정책은 `docs/DEVELOPMENT_GUIDE.md`로 옮겼다.
 
 ## 4. Database Architecture
 

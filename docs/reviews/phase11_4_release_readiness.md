@@ -131,6 +131,7 @@ alembic upgrade head
 ```
 - 최신 revision은 `011_staff_deleted_status`다(🔎 `backend/alembic/versions/` 001~011, ✅ 테스트 DB에서 head 확인).
 - `alembic/env.py`도 앱과 같은 `require_database_url` 검사를 거친다. 그래서 production 모드에서는 TLS가 없는 URL이나 로컬 DB를 거부한다.
+- **(2026-11-22 추가)** 001은 저장소 루트의 `sql/schema_postgresql.sql`을 읽으므로 **저장소 전체가 있는 위치**에서 실행해야 한다. 007은 `CREATE EXTENSION IF NOT EXISTS btree_gist`를 실행하므로 **확장을 만들 권한**이 필요하다. 상세는 배포 가이드 4절 "DB 마이그레이션".
 
 **최초 관리자**(한 번만. 값은 셸에서만 입력하고 기록하지 않는다)
 ```
@@ -205,13 +206,14 @@ ACADEMY_BOOTSTRAP_ADMIN=1 ACADEMY_BOOTSTRAP_EMAIL=<…> ACADEMY_BOOTSTRAP_PASSWO
    - ☁️ Supabase Direct connection이 IPv6 전용인지, Render에서 IPv4로 닿는지 확인한다. 안 되면 Session pooler를 쓴다.
 3. URL 끝에 `?sslmode=require`를 붙인다. 없으면 앱과 Alembic이 시작을 거부한다.
    - CA 인증서를 준비할 수 있으면 `verify-full`을 쓴다.
-4. Render 셸이나 로컬에서 운영 환경변수를 설정하고 `alembic upgrade head`를 실행한다. `011_staff_deleted_status`인지 확인한다.
-5. `bootstrap_admin.py`로 최초 관리자를 만든다.
-6. **시연 데이터**
+4. Supabase 대시보드(Database → Extensions)에서 **`btree_gist`를 먼저 켠다**. Migration 007이 이 확장을 쓴다.
+5. **저장소 전체가 있는 곳**(Render 셸에서 루트의 `sql/`이 보이는지 ☁️ 확인, 안 보이면 저장소를 받은 로컬 PC)에서 운영 환경변수를 설정한다. 그다음 `backend` 디렉터리에서 `alembic upgrade head`를 실행하고, 결과가 `011_staff_deleted_status`인지 확인한다. 001이 루트의 `sql/schema_postgresql.sql`을 읽는다.
+6. `bootstrap_admin.py`로 최초 관리자를 만든다.
+7. **시연 데이터**
    - 별도 Seed 스크립트는 없다(🔎).
    - 화면에서 가상 데이터를 넣는다. 반·직원 등록 → `.dev-data/samples/가상학생-업로드확인.xlsx` 형식의 **가상** 엑셀 업로드 → 초안 생성 → 모의 발송.
    - 실제 학생·보호자 정보는 넣지 않는다.
-7. **분리와 초기화**
+8. **분리와 초기화**
    - 테스트 DB(로컬 55432)와 시연 DB(Supabase)는 물리적으로 분리되어 있다. production 모드에서는 로컬 dev/test URL과 테스트 스위치가 거부된다(✅ 단위 테스트).
    - TRUNCATE 테스트는 `test` 모드와 로컬 테스트 DB 대상에서만 돌아서 Supabase에 닿을 수 없다.
    - 시연 DB를 초기화·복원하는 자동 절차는 없다. ☁️ 초기화가 필요하면 Supabase 백업이나 새 프로젝트로 처리하고 `alembic upgrade head`부터 다시 한다.

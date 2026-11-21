@@ -1,158 +1,146 @@
-# Academy Message Manager
+# Academy LearningOps
 
-## 현재 제품 방향
+학원 직원(관리자·선생님·조교)을 위한 **수업·출결·성적 관리와 학부모 성적 안내 메시지** 웹서비스입니다.
+Java Swing 데스크톱 프로그램(v1.x)을 **FastAPI + React + PostgreSQL** 웹서비스(v2.0.0)로 전환했습니다.
 
-현재 주 개발 경로는 **FastAPI + React + PostgreSQL 모듈형 모놀리스**다. 처음 만든 Java/Swing/JDBC
-프로그램은 Import 업무 규칙과 회귀 계약을 옮겨 오기 위한 기준선으로만 쓰였고, **이 저장소에는
-포함하지 않는다**(아래 [Java 레거시](#java-레거시-저장소-미포함) 참고).
+> 학부모 메시지 발송은 **모의 발송(Mock)** 입니다. 실제 문자·이메일은 보내지 않습니다.
+
+## 배경
+
+학원은 수업마다 출결·과제·시험 결과를 정리해 학부모에게 학습 현황을 안내해야 합니다.
+처음에는 이 일을 Java Swing 데스크톱 프로그램(v1.0~v1.2)으로 자동화했습니다. 엑셀·CSV를 불러와 메시지를 만들고 Gmail SMTP로 발송하는 방식이었습니다.
+하지만 한 PC에서 한 사람만 쓰는 구조였고, 화면 클래스 하나가 업무 절차까지 맡고 있었으며, 직원별 권한 구분도 없었습니다.
+
+v2.0.0은 같은 업무를 여러 직원이 역할에 맞게 나눠 쓰는 웹서비스로 옮겼습니다.
+- 서버가 인증·권한·데이터 정합성을 책임지도록 다시 설계했다.
+- 실제 학원 업무 흐름을 기준으로 화면을 구성했다: 출결 입력 → 주간 엑셀 업로드 → 메시지 검토·확정 → 발송.
+
+자세한 과정은 [Development History](docs/DEVELOPMENT_HISTORY.md)에 있습니다.
+
+## 주요 기능
+
+| 영역 | 기능 |
+|---|---|
+| 대시보드 | 반·수업별로 남은 성적 안내 할 일(발송 실패 → 발송 대기 → 검토 대기 → 안내 없음 순) |
+| 학생·반 관리 | 반 등록·종료, 학생 등록과 수강 등록, 반별 학생, 휴원·복귀, 보호자 메일 주소 변경(관리자) |
+| 수업·출결·성적 | 수업 회차, 출결(출석·지각·결석·인정결석), 과제 등급, 평가·점수, 진도표. 동시 수정 충돌 감지 |
+| 주간 엑셀 업로드 | 시간대(시트) 선택 → 미리보기(저장 안 함) → 확정. 앱과 같은 행은 건너뛰고, 신규·복귀 학생을 판단 |
+| 성적 안내 메시지 | 템플릿 → 초안 생성 → 검토 → 확정 → **모의 발송** → 실패 재시도. 반 단위 일괄 처리, 누락·예외 생성, 처리 현황 |
+| 출결·성적 분석 | 출결 입력 완료율·출석률, 성적 분석, 관심 필요 학생, 학생 학습 리포트 |
+| 직원·담당 반 | 직원 계정(관리자·선생님·조교), 담당 반 배정, 비활성화·삭제, 비밀번호 재설정 코드 발급(관리자) |
+| 계정 보안 | 서버 세션·CSRF, 로그인 시도 제한, 60분 유휴 시 자동 로그아웃, 비밀번호 변경 |
+
+권한은 서버가 판정합니다. 선생님·조교는 배정된 반의 데이터만 볼 수 있습니다.
+
+## 아키텍처
 
 ```text
-React → FastAPI Router → Service(업무·트랜잭션) → Repository(SQLAlchemy) → PostgreSQL
-                         Authorization(서버 세션·CSRF·RBAC·담당 반 범위)
+React (Vite, Ant Design)
+  │  /api  (세션 쿠키 + X-CSRF-Token)
+  ▼
+FastAPI ── 미들웨어: Origin 허용 목록, 본문 크기 제한, 보안 헤더, 개인정보 없는 오류 로그
+  │  Router → Service(업무 규칙·트랜잭션·권한·감사) → Repository(SQLAlchemy)
+  ▼
+PostgreSQL 17 (FK·CHECK·UNIQUE·EXCLUDE 제약, Alembic Migration 001~011)
 ```
 
-Phase 6A는 ADMIN의 반·학생·수강·최소 직원 배정과 TEACHER/ASSISTANT의 담당 반 학생
-조회까지 구현한다. 쓰기 API는 ADMIN 세션과 CSRF가 모두 필요하며, 목록도 서버가 배정 기간과
-역할로 범위를 제한한다. 교직원 조회 응답에는 보호자 이름·이메일을 포함하지 않는다.
+- 백엔드 모듈: `auth`, `learningops`, `academics`, `lesson_upload`, `notifications`, `message_operations`, `analytics`
+- 동시성: 행 잠금과 버전 검사, 멱등 키, 메시지당 발송 성공 1회 제약, 엑셀 확정의 반별 잠금
+- 데이터베이스 구조: [ERD](docs/database/ERD.md)(테이블 20개, 코드에서 자동 생성)
 
-- `POST /api/classrooms`, `POST /api/students`
-- `POST /api/classrooms/{id}/enrollments`, `POST /api/classrooms/{id}/assignments`
-- `GET /api/classrooms/{id}/students?limit=50&offset=0`
-- React `/students`: 위 업무 흐름과 담당 반 학생 목록
+## 기술 스택
 
-DB 변경은 Alembic `003_phase6a_enrollment_integrity` 하나이며 학생·반 조합의 동시 중복을
-DB UNIQUE 인덱스로 차단한다. 적용 전에 기존 중복을 읽기 전용으로 진단하며 개발 DB에
-자동 적용하거나 데이터를 자동 정리하지 않는다. 관리자 계정이 없으면 비밀값을 파일이나
-명령 기록에 넣지 말고 `scripts/bootstrap-admin.ps1`을 사용한다.
+| 구분 | 사용 기술 |
+|---|---|
+| Backend | Python 3.12, FastAPI, Pydantic, SQLAlchemy 2.1, Alembic, Psycopg 3, Uvicorn, Argon2, openpyxl + defusedxml |
+| Frontend | React 19, TypeScript, Vite, Ant Design, TanStack Query, Axios, React Router |
+| Database | PostgreSQL 17 |
+| Test·Quality | pytest, Vitest, Testing Library, Ruff, oxlint |
+| Infra | Docker Compose(로컬 DB), 배포 예정: Supabase · Render · Vercel |
 
-이후 Phase 6B~11에서 기능을 차례로 구현했고, 모두 완료됐다. 현재는 Phase 11-5(배포) 준비 단계다.
-- Phase 6B: 직원·담당 반 배정
-- Phase 7: 수업·출결·성적
-- Phase 8: 템플릿·초안·검토·모의 발송
-- Phase 9: 누락 탐지·처리 상태·실패 재시도
-- Phase 10: 출결·성적 분석
-- Phase 11: 통합·보안·정합성·성능 점검과 릴리스 준비
+## 버전 이력
 
-Kafka, Redis, MSA, Kubernetes, 실제 이메일/SMS 발송은 보류 또는 범위 밖이다.
+| 버전 | 날짜 | 내용 |
+|---|---|---|
+| `v1.0-legacy` | 2026-08-21 | Java Swing + Oracle 데스크톱 프로그램 |
+| `v1.1.0` | 2026-09-01 | 도메인·포트 계층 분리, 단위 테스트 도입(Refactoring 1) |
+| `v1.2.0` | 2026-09-03 | PostgreSQL 재설계 |
+| `v2.0.0` | 2026-11-21 | FastAPI + React 웹서비스로 전환 |
 
-전체 개발 이력과 현재 상태는 [Development History](docs/DEVELOPMENT_HISTORY.md)를 참고한다.
-Phase 6A 세부 내용은 [Phase 6A 보고서](docs/phase6a-student-enrollment-vertical-slice.md)에 있다.
+v1.x의 Java 코드는 이 브랜치에 포함하지 않고, 각 태그에 남아 있습니다. 버전별 비교와 개선 근거는 [Development History 2·9절](docs/DEVELOPMENT_HISTORY.md#9-legacy--web-비교-개선-항목별-근거)에 있습니다.
 
-### D드라이브 개발 데이터 정책
+## 프로젝트 구조
 
-프로젝트와 기존 Python 가상환경, Node 의존성 및 빌드 결과는 D드라이브에 유지한다. 테스트나
-의존성 명령 전 아래 스크립트를 현재 PowerShell 세션에만 dot-source하면 pip/npm/Ruff/pytest,
-coverage와 임시 파일이 Git 제외 경로인 `.dev-data` 아래에 저장된다. 사용자·시스템 전역
-환경변수는 변경하지 않는다. 기존 정상 가상환경과 `node_modules`는 재설치하지 않는다.
+```text
+backend/            FastAPI 앱(app/), Alembic Migration(alembic/), 테스트(tests/), 운영 스크립트(scripts/)
+frontend/           React 앱(src/)
+sql/                기준 스키마(schema_postgresql.sql, Migration 001이 읽음), 시드·검증 SQL
+tests/fixtures/     메시지 미리보기 계약 fixture(Python 테스트가 사용)
+docs/               개발 이력·가이드·ERD·리뷰·배포 문서
+scripts/            로컬 실행·검증 PowerShell 스크립트
+data/               가상 샘플 데이터
+```
+
+## 시작하기
+
+준비물: Python 3.12+, Node.js 24.x, Docker Desktop
 
 ```powershell
-. .\scripts\use-d-drive-dev-env.ps1
+.\scripts\migrate-dev-db.ps1    # 개발 DB에 Migration 적용
+.\scripts\bootstrap-admin.ps1   # 최초 관리자 생성
+.\scripts\start-fastapi.ps1     # API  http://127.0.0.1:8000
+.\scripts\start-frontend.ps1    # 화면 http://127.0.0.1:5173
 ```
 
-Docker Desktop의 WSL 데이터 위치는 현재 `D:\DockerData\DockerDesktopWSL`로 설정되어 있다.
-컨테이너·볼륨·VHDX는 검증 작업에서 이동·삭제·초기화하지 않는다.
-
-## 현재 개발 비용·외부 연동 정책
-
-이 저장소의 LearningOps 고도화는 개인 학습·취업 포트폴리오 목적으로 기존 로컬 환경과 무료
-오픈소스만 사용한다. 유료 cloud/SaaS/API/DB를 생성하거나 배포하지 않으며 Docker Compose
-로컬 환경까지만 다룬다. FastAPI 개발과 테스트에서는 실제 이메일·SMS를 발송하지 않고 Mock
-adapter만 사용한다(`backend/app/modules/notifications/sender.py`).
-Codex 모델 사용량과 계정 과금은 저장소로 통제할 수 없으므로 사용자가 직접 확인한다.
-
-실제 학원 업무가 문자 중심인 점을 반영해, 보호자 휴대전화번호 기반 SMS/LMS 발송으로의 전환을
-향후 검토 과제로 관리한다(미구현). 실제 발송 API 연동 전에는 외부 발송 I/O와 DB 트랜잭션 분리가
-선행되어야 한다. 배경과 검토 범위는 [Development History — Future Roadmap](docs/DEVELOPMENT_HISTORY.md#8-future-roadmap)을 참고한다.
-
-## 로컬 실행
-
-요구 사항: Python 3.12 이상, Node.js(로컬 검증 24.x)와 npm, Docker Desktop(PostgreSQL 컨테이너).
-백엔드 준비·설치·환경변수는 [backend/README.md](backend/README.md)와 `backend/.env.example`,
-프론트엔드 환경변수는 `frontend/.env.example`을 참고한다.
-
-```powershell
-.\scripts\migrate-dev-db.ps1    # 개발 DB에 Alembic Migration 적용
-.\scripts\bootstrap-admin.ps1   # 최초 관리자 생성(ACADEMY_BOOTSTRAP_EMAIL·PASSWORD를 현재 세션에만 설정)
-.\scripts\start-fastapi.ps1     # FastAPI 127.0.0.1:8000
-.\scripts\start-frontend.ps1    # React(Vite) 127.0.0.1:5173, /api는 FastAPI로 proxy
-```
-
-각 스크립트는 개발 DB 컨테이너(`academy-learningops-postgres-dev`, `127.0.0.1:55431`)의
-라벨·포트를 확인한 뒤에만 실행되며, DB 비밀번호를 출력하지 않는다.
+DB 컨테이너 준비, 환경변수, 데이터 위치 정책 등 자세한 절차는 [개발 가이드](docs/DEVELOPMENT_GUIDE.md)에 있습니다.
 
 ## 테스트
 
 ```powershell
-. .\scripts\use-d-drive-dev-env.ps1
-
-# 백엔드 단위 테스트·린트 (DB 불필요)
-cd backend
-.\.venv\Scripts\pytest.exe -m "not postgres"
-.\.venv\Scripts\ruff.exe check .
-cd ..
-
-# 프론트엔드
-cd frontend
-npm run lint
-npm test
-npm run build
-cd ..
+.\scripts\verify-all.ps1        # Ruff → pytest → lint → Vitest → build (DB 불필요)
 ```
 
-위 단계를 한 번에 실행하려면 `.\scripts\verify-all.ps1`을 사용한다(Ruff → pytest → lint → Vitest → build, DB 불필요).
+| 범위 | 결과(2026-11-21) |
+|---|---|
+| 백엔드 DB 없는 테스트 | 117개 실행 · 통과 |
+| PostgreSQL 통합 테스트(격리 테스트 DB) | 141개 실행 · 통과 |
+| 프론트엔드 Vitest | 113개 실행 · 통과 |
 
-PostgreSQL 통합 테스트는 **격리 테스트 DB**(`academy-learningops-postgres-test`, `127.0.0.1:55432`,
-라벨 `academy.environment=isolated-test`)에서만 실행된다. 일부 테스트가 테이블을 `TRUNCATE`하므로
-다른 DB에는 실행하지 않는다. 스크립트가 컨테이너 라벨·포트·DB 이름·사용자를 확인하고, 하나라도
-다르면 실행을 거부한다.
-
-```powershell
-$env:ACADEMY_TEST_DB_PASSWORD = '<로컬 테스트 DB 비밀번호>'   # 현재 세션에만
-.\scripts\run-postgres-integration.ps1
-Remove-Item Env:ACADEMY_TEST_DB_PASSWORD
-```
+- 수치는 **실행해서 통과한 테스트 수**이며, 커버리지는 측정하지 않았습니다.
+- 통합 테스트는 격리된 테스트 DB에서만 실행됩니다([개발 가이드 4절](docs/DEVELOPMENT_GUIDE.md#4-테스트)).
 
 ## 배포
 
-배포 실행 모드(`ACADEMY_DB_MODE=production`), 필수 환경변수, 실행 명령과 배포 후 점검 절차는
-다음 문서를 따른다.
+아직 배포하지 않았습니다(Phase 11-5 예정, Supabase · Render · Vercel).
+- 배포 실행 모드(`ACADEMY_DB_MODE=production`)는 시작할 때 설정을 검증하고, 안전하지 않으면 시작을 거부합니다.
+- 절차: [보안 배포 설정 가이드](docs/deployment/phase11_5_security_deployment_guide.md), [릴리스 준비도·배포 인계](docs/reviews/phase11_4_release_readiness.md)
 
-- [보안 배포 설정 가이드](docs/deployment/phase11_5_security_deployment_guide.md)
-- [릴리스 준비도·배포 인계](docs/reviews/phase11_4_release_readiness.md)
+## 문서
 
-## 데이터베이스 구조
+| 문서 | 내용 |
+|---|---|
+| [Development History](docs/DEVELOPMENT_HISTORY.md) | Java v1.0 → 웹 v2.0.0 개발 이력, 개선 항목별 근거, 현재 상태·로드맵 |
+| [Engineering Retrospective](docs/ENGINEERING_RETROSPECTIVE.md) | 기술 결정과 회고(FastAPI 선택 이유, 기능 이식 누락 등) |
+| [개발 가이드](docs/DEVELOPMENT_GUIDE.md) | 로컬 환경·테스트·스키마 변경·개발 정책 |
+| [ERD](docs/database/ERD.md) | 현재 데이터베이스 구조 |
+| [backend/README](backend/README.md) · [frontend/README](frontend/README.md) | 백엔드·프론트엔드 세부 안내 |
+| [docs/reviews/](docs/reviews/) | 보안·정합성·성능·릴리스 점검 결과 |
 
-- **ERD**: [`docs/database/ERD.md`](docs/database/ERD.md)
-  - 테이블 20개를 영역별(학사, 직원·인증·감사, 학부모 안내 메시지, Java 레거시)로 나눈 Mermaid 다이어그램이다.
-  - 코드(SQLAlchemy 모델)에서 자동 생성한다(`backend/scripts/generate_erd.py`).
-- **스키마 변경**: Alembic Migration(`backend/alembic/versions/`, 001~011)으로만 한다. 이력과 원칙은 [Development History 4절](docs/DEVELOPMENT_HISTORY.md#4-database-architecture)에 있다.
+## 향후 계획
 
-## 샘플 데이터
+- 클라우드 배포(Supabase · Render · Vercel)와 배포 후 점검
+- 보호자 휴대전화 기반 SMS/LMS 발송 검토. 그 전에 외부 발송과 DB 트랜잭션 분리(INT-I1)가 필요함
+- Java 버전에 있던 보강 신청 관리의 웹 이식 검토
+- AI 기능 추가 검토(범위 미정)
+- CI(자동 테스트·의존성 검사) 구성
 
-`data/sample_students.csv`, `data/sample_students.xlsx`, `tests/fixtures/`, `sql/seed_postgresql.sql`의
-인물·학교·이메일은 모두 테스트용 가상 데이터다. `example.invalid` 주소는 실제 메일이 발송되지 않는
-예약 도메인이다. 실제 학생·보호자 정보는 저장소에 넣지 않는다.
+## 알려진 제한
 
-## Java 레거시 (저장소 미포함)
+- 학부모 메시지는 모의 발송만 합니다. Java 버전의 실제 Gmail SMTP 발송은 옮기지 않았습니다.
+- Java 버전의 보강 신청 관리 기능은 아직 웹에 없습니다.
+- 로그인 시도 제한과 비밀번호 재설정 코드가 서버 메모리에 있어서, 워커 1개로 운영해야 하고 재시작하면 초기화됩니다.
+- 브라우저 E2E 자동화 테스트와 커버리지 측정은 아직 없습니다.
 
-이 프로젝트는 Java 17 · Swing · JDBC · Maven으로 만든 성적 안내 메시지 생성·발송 프로그램에서
-시작했다. 업무 규칙과 회귀 계약을 FastAPI로 옮긴 뒤에는 기준선으로만 쓰였고, Java 소스(`src/`)와
-빌드 설정(`pom.xml`)은 이 저장소에 포함하지 않는다(`.gitignore`). 따라서 Java 빌드·실행·테스트
-절차도 이 문서에서 제외했다.
+## 라이선스
 
-버전별 발전 과정(v1.0-legacy → v1.1.0 → v1.2.0 → FastAPI·React)과 항목별 비교(Before → Problem →
-Decision → After → Validation → Trade-off), 웹에서 빠지거나 약해진 기능은
-[Development History 2절](docs/DEVELOPMENT_HISTORY.md#2-architecture-evolution)과
-[9절](docs/DEVELOPMENT_HISTORY.md#9-legacy--web-비교-개선-항목별-근거)에 정리했다.
-
-Java 시절에서 이어져 지금도 쓰이는 파일만 남아 있다.
-
-- `sql/schema_postgresql.sql`: Alembic 첫 Migration `001_java_schema_baseline`이 읽는 기준 스키마
-- `tests/fixtures/contract/`: Python 계약 테스트(`backend/tests/test_contract_fixtures.py`)가 읽는 fixture
-- `docs/`의 리팩토링·마이그레이션 기록(예: [백엔드 리팩토링 증거](docs/PORTFOLIO_BACKEND_REFACTORING_EVIDENCE.md),
-  [Development History](docs/DEVELOPMENT_HISTORY.md)). 문서가 가리키는 Java 소스 경로는 이 저장소에 없다.
-
-## 운영 전 개인정보 보호 확인
-
-현재 프로젝트의 샘플 데이터는 모두 가상 정보다. 실제 운영 환경에서는 메시지 본문과 보호자 연락처에
-대해 보존 기간, 접근 권한 및 삭제 절차를 별도로 적용해야 한다.
+라이선스는 아직 지정하지 않았습니다.

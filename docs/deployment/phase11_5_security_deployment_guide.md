@@ -96,7 +96,18 @@ uvicorn app.main:app --host 0.0.0.0 --port $PORT --no-proxy-headers --no-access-
 - `--host 0.0.0.0`은 `ACADEMY_DB_MODE=production`일 때만 동작한다. development/test 모드는 루프백만 허용한다.
 - **워커는 반드시 1개**다(`--workers`를 쓰지 않는다). 로그인 시도 카운터와 비밀번호 재설정 코드가 프로세스 메모리에 있으므로, 워커가 여러 개면 한도가 N배로 늘고 발급한 재설정 코드가 다른 워커에서 "없는 코드"로 처리된다.
 
-**DB 마이그레이션**: 배포 전에 운영 환경변수(아래 표)를 설정한 상태에서 `alembic upgrade head`를 한 번 실행한다. 이번 단계(11-4-B)에는 스키마 변경이 없다.
+**DB 마이그레이션**: 배포 전에 운영 환경변수(아래 표)를 설정한 상태에서 `backend` 디렉터리에서 `alembic upgrade head`를 한 번 실행한다. 이번 단계(11-4-B)에는 스키마 변경이 없다.
+
+실행 전 확인할 두 가지(2026-11-22 추가):
+- **저장소 전체가 있는 위치에서 실행한다.**
+  - 첫 Migration `001_java_schema_baseline`은 저장소 루트의 `sql/schema_postgresql.sql`을 읽는다(`backend/alembic/versions/001_java_schema_baseline.py`).
+  - `backend/` 폴더만 복사한 곳에서 실행하면 001이 파일을 찾지 못해 실패한다.
+  - 앱 실행에는 이 파일이 필요 없고, Migration을 실행할 때만 필요하다.
+  - ☁️ Render의 Root Directory를 `backend`로 두었을 때 Render 셸에서 루트의 `sql/`이 보이는지는 확인이 필요하다. 보이지 않으면 저장소 전체를 받은 로컬 PC에서 운영 DB 주소로 실행한다.
+- **`btree_gist` 확장을 만들 권한이 필요하다.**
+  - `007_phase71_sessions_pauses`가 `CREATE EXTENSION IF NOT EXISTS btree_gist`를 실행한다. 휴원 기간이 겹치지 않게 막는 EXCLUDE 제약에 필요하다.
+  - PostgreSQL 13 이상에서 `btree_gist`는 "trusted" 확장이라, 슈퍼유저가 아니어도 해당 DB에 CREATE 권한이 있으면 만들 수 있다.
+  - ☁️ Supabase에서는 Migration 전에 대시보드(Database → Extensions)에서 `btree_gist`를 미리 켜 두는 것을 권장한다. 이미 켜져 있으면 007의 `IF NOT EXISTS`가 아무것도 하지 않는다. 권한이 없으면 007에서 멈추고, 그때까지의 Migration은 각자 커밋되어 006까지 적용된 상태로 남는다.
 
 **최초 관리자 계정**: 서비스 셸에서 한 번만 실행한다. 값은 셸 입력으로만 넣고, 실행 후 환경변수를 지운다. 문서·채팅·커밋에 남기지 않는다.
 ```
