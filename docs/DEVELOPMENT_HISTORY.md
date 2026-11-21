@@ -241,6 +241,13 @@ Java 경로(Swing / Java HttpServer → service → port → JDBC → PostgreSQL
 업무 테이블 20개(+ `alembic_version`). 모델은 `backend/app/db/models/tables.py`, 기대 목록은
 `backend/app/db/schema.py`(`EXPECTED_TABLES`)에 있다.
 
+- **현재 ERD**: [`docs/database/ERD.md`](database/ERD.md)
+  - Mermaid 형식이며, `backend/scripts/generate_erd.py`가 모델에서 자동 생성한다.
+  - Migration 뒤에 다시 실행하고, `--check`로 최신 여부를 확인한다.
+- **이전 ERD**: `docs/database/`의 `AMM_PostgreSQL_ERD_v1.3.*`, `PostgreSQL ERD v1.2.drawio`, `import-audit-erd.md`는 Java v1.2 시절(13개 테이블) 기록이다.
+  - 웹 버전에서 추가된 10개 테이블이 빠져 있다.
+  - Migration 010으로 삭제된 `import_*` 3개가 들어 있다.
+
 - 학습: `student`, `classroom`, `enrollment`, `enrollment_pause`, `lesson`, `lesson_result`, `assessment`, `assessment_result`, `makeup_request`
 - 직원·보안: `staff_user`, `classroom_staff_assignment`, `auth_session`, `audit_log`
 - 학부모 안내(FastAPI): `notification_template`, `parent_notification`, `notification_send_attempt`
