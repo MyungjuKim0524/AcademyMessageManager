@@ -70,7 +70,7 @@ PostgreSQL 17 (FK·CHECK·UNIQUE·EXCLUDE 제약, Alembic Migration 001~011)
 | Frontend | React 19, TypeScript, Vite, Ant Design, TanStack Query, Axios, React Router |
 | Database | PostgreSQL 17 |
 | Test·Quality | pytest, Vitest, Testing Library, Ruff, oxlint |
-| Infra | Docker Compose(로컬 DB), 배포 예정: Supabase · Render · Vercel |
+| Infra | Docker Compose(로컬 DB), 배포 예정: Neon · Render · Vercel |
 
 ## 버전 이력
 
@@ -134,7 +134,7 @@ DB 컨테이너 준비, 환경변수, 데이터 위치 정책 등 자세한 절�
 
 ## 배포
 
-아직 배포하지 않았습니다(Phase 11-5 예정, Supabase · Render · Vercel).
+아직 배포하지 않았습니다(Phase 11-5 예정, Neon · Render · Vercel).
 - 배포 실행 모드(`ACADEMY_DB_MODE=production`)는 시작할 때 설정을 검증하고, 안전하지 않으면 시작을 거부합니다.
 - 절차: [보안 배포 설정 가이드](docs/deployment/phase11_5_security_deployment_guide.md), [릴리스 준비도·배포 인계](docs/reviews/phase11_4_release_readiness.md)
 
@@ -151,7 +151,7 @@ DB 컨테이너 준비, 환경변수, 데이터 위치 정책 등 자세한 절�
 
 ## 향후 계획
 
-- 클라우드 배포(Supabase · Render · Vercel)와 배포 후 점검
+- 클라우드 배포(Neon · Render · Vercel)와 배포 후 점검
 - 보호자 휴대전화 기반 SMS/LMS 발송 검토. 그 전에 외부 발송과 DB 트랜잭션 분리(INT-I1)가 필요함
 - Java 버전에 있던 보강 신청 관리의 웹 이식 검토
 - AI 기능 추가 검토(범위 미정)

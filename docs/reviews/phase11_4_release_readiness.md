@@ -1,9 +1,9 @@
 # Phase 11-4 릴리스 준비도 · 배포 인계 (11-4-A · B · C)
 
-작업일: 2026-11-21 · 대상: Phase 11-5(GitHub → Supabase → Render → Vercel)를 직접 수행하는 사람
+작업일: 2026-11-21 · 대상: Phase 11-5(GitHub → Neon → Render → Vercel)를 직접 수행하는 사람
 근거 문서: `phase11_2_*`, `phase11_3_integrity_audit.md`, `phase11_3_integrity_remediation.md`, `phase11_4_a_performance_results.md`, `phase11_4_b_runtime_account_results.md`, `docs/deployment/phase11_5_security_deployment_guide.md`
 
-**이 문서는 로컬 코드와 로컬 테스트로 확인한 사실만 PASS로 적는다.** Render·Vercel·Supabase에서는 아무것도 실행하지 않았다. 클라우드 항목은 모두 "배포 시 확인"으로 남긴다. 비밀번호·키·토큰 값은 이 문서에 없다.
+**이 문서는 로컬 코드와 로컬 테스트로 확인한 사실만 PASS로 적는다.** Render·Vercel·Neon에서는 아무것도 실행하지 않았다. 클라우드 항목은 모두 "배포 시 확인"으로 남긴다. 비밀번호·키·토큰 값은 이 문서에 없다.
 
 표기
 - ✅ 로컬에서 실행해 확인
@@ -197,26 +197,26 @@ ACADEMY_BOOTSTRAP_ADMIN=1 ACADEMY_BOOTSTRAP_EMAIL=<…> ACADEMY_BOOTSTRAP_PASSWO
 > - **개인 정보 정리**: 문서 3개의 Windows 사용자명 경로를 `%USERPROFILE%`로 바꿨다.
 > - 업로드 대상은 294개 파일이며, 알려진 민감정보는 없다(판정 READY, 업로드는 사용자 승인 대기).
 
-## 7. Supabase DB 생성과 Migration 준비 (☁️ 11-5)
+## 7. Neon DB 생성과 Migration 준비 (☁️ 11-5)
 
-1. 프로젝트를 만든다. DB 비밀번호는 비밀번호 관리자에만 보관한다.
+> 2026-11-23 갱신: 배포 DB를 Neon으로 정했다. 실행 절차 전체는 `docs/deployment/phase11_5_a_neon_guide.md`에 있고, 이 절은 요약이다.
+
+1. Neon 프로젝트를 만든다(Postgres 17, Render와 같은 지역). DB 비밀번호는 비밀번호 관리자에만 보관한다.
 2. 연결 문자열을 고른다.
-   - **Session pooler(포트 5432)** 또는 Direct connection을 쓴다.
-   - ☁️ **Transaction pooler(6543)는 피한다.** psycopg 3은 같은 쿼리를 5번 넘게 실행하면 prepared statement를 쓰는데(`prepare_threshold`), 트랜잭션 풀링과 충돌할 수 있다. 코드에서 이를 끄는 설정은 없다.
-   - ☁️ Supabase Direct connection이 IPv6 전용인지, Render에서 IPv4로 닿는지 확인한다. 안 되면 Session pooler를 쓴다.
-3. URL 끝에 `?sslmode=require`를 붙인다. 없으면 앱과 Alembic이 시작을 거부한다.
-   - CA 인증서를 준비할 수 있으면 `verify-full`을 쓴다.
-4. Supabase 대시보드(Database → Extensions)에서 **`btree_gist`를 먼저 켠다**. Migration 007이 이 확장을 쓴다.
-5. **저장소 전체가 있는 곳**(Render 셸에서 루트의 `sql/`이 보이는지 ☁️ 확인, 안 보이면 저장소를 받은 로컬 PC)에서 운영 환경변수를 설정한다. 그다음 `backend` 디렉터리에서 `alembic upgrade head`를 실행하고, 결과가 `011_staff_deleted_status`인지 확인한다. 001이 루트의 `sql/schema_postgresql.sql`을 읽는다.
-6. `bootstrap_admin.py`로 최초 관리자를 만든다.
+   - **Direct connection**(호스트에 `-pooler`가 없는 것)을 Migration과 앱 실행에 모두 쓴다.
+   - ☁️ **Pooled connection(`-pooler`)은 쓰지 않는다.** PgBouncer 트랜잭션 모드다. psycopg 3은 같은 쿼리를 5번 넘게 실행하면 prepared statement를 쓰는데(`prepare_threshold`), 이것이 동작하는지 코드로 보장할 수 없다. 코드에서 이를 끄는 설정은 없다. 앱은 워커 1개에 연결 최대 10개라 풀러가 필요 없다.
+3. URL 접두사를 `postgresql+psycopg://`로 바꾸고, 끝의 `?sslmode=require&channel_binding=require`는 그대로 둔다. `sslmode`가 없으면 앱과 Alembic이 시작을 거부한다.
+4. Migration 007이 `CREATE EXTENSION IF NOT EXISTS btree_gist`를 실행한다. Neon 소유자 역할이면 별도 사전 작업이 없다. ☁️ 생성되었는지 확인한다.
+5. **저장소 전체가 있는 로컬 PC**에서 PowerShell 창에만 운영 환경변수를 넣는다. 그다음 `backend` 디렉터리에서 `alembic upgrade head`를 실행하고 결과가 `011_staff_deleted_status`인지 확인한다. 001이 루트의 `sql/schema_postgresql.sql`을 읽는다. ☁️ Render 무료 인스턴스에서 Shell을 쓸 수 있는지는 확인하지 않았다.
+6. 최초 관리자: 시연용이면 Seed 스크립트가 시연 관리자를 만든다. 운영용 관리자가 따로 필요하면 `bootstrap_admin.py`를 쓴다.
 7. **시연 데이터**
-   - 별도 Seed 스크립트는 없다(🔎).
-   - 화면에서 가상 데이터를 넣는다. 반·직원 등록 → `.dev-data/samples/가상학생-업로드확인.xlsx` 형식의 **가상** 엑셀 업로드 → 초안 생성 → 모의 발송.
+   - `backend/scripts/seed_demo.py`(Phase 11-5-A)가 가상 계정·반·학생·수업·출결·성적을 넣는다. 다시 실행해도 중복되지 않고, `--check`는 읽기 전용으로 검증한다.
+   - 엑셀 업로드 시연은 `.dev-data/samples/가상학생-업로드확인.xlsx` 형식의 **가상** 파일로 화면에서 한다.
    - 실제 학생·보호자 정보는 넣지 않는다.
 8. **분리와 초기화**
-   - 테스트 DB(로컬 55432)와 시연 DB(Supabase)는 물리적으로 분리되어 있다. production 모드에서는 로컬 dev/test URL과 테스트 스위치가 거부된다(✅ 단위 테스트).
-   - TRUNCATE 테스트는 `test` 모드와 로컬 테스트 DB 대상에서만 돌아서 Supabase에 닿을 수 없다.
-   - 시연 DB를 초기화·복원하는 자동 절차는 없다. ☁️ 초기화가 필요하면 Supabase 백업이나 새 프로젝트로 처리하고 `alembic upgrade head`부터 다시 한다.
+   - 테스트 DB(로컬 55432)와 시연 DB(Neon)는 물리적으로 분리되어 있다. production 모드에서는 로컬 dev/test URL과 테스트 스위치가 거부된다(✅ 단위 테스트).
+   - TRUNCATE 테스트는 `test` 모드와 로컬 테스트 DB 대상에서만 돌아서 Neon에 닿을 수 없다.
+   - 시연 DB를 초기화·복원하는 자동 절차는 없다. ☁️ 초기화가 필요하면 Neon의 복원 기능이나 새 프로젝트로 처리하고 `alembic upgrade head`부터 다시 한다.
 
 ## 8. Render FastAPI 배포 설정 (☁️ 11-5)
 
@@ -387,7 +387,7 @@ ACADEMY_BOOTSTRAP_ADMIN=1 ACADEMY_BOOTSTRAP_EMAIL=<…> ACADEMY_BOOTSTRAP_PASSWO
 | # | 위험 | 영향 | 완화 | 확인 시점 | 차단 |
 |---|---|---|---|---|---|
 | R1 | 실제 Render 기동·환경변수 주입 미검증 | 시작 실패 시 서비스 불가 | 시작 검증이 설정 이름만 보여 주므로 고치기 쉽다 | ☁️ 11-5 가이드 6절 0단계 | 아님 |
-| R2 | Supabase 연결 방식(TLS, IPv4, pooler와 prepared statement) | DB 오류 503 | Session pooler(5432) + `sslmode=require` | ☁️ 11-5 첫 Migration | 아님 |
+| R2 | Neon 연결 방식(TLS·channel binding, 휴면 뒤 재연결, pooler와 prepared statement) | DB 오류 503 | Direct connection + `sslmode=require`, `pool_pre_ping` | ☁️ 11-5 첫 Migration | 아님 |
 | R3 | Vercel Rewrite 비밀 헤더 가능 여부 | 구성 A′면 로그인 제한이 송신 주소 단위로 묶임 | 가이드 3·7절 | ☁️ 11-5 | 아님 |
 | R4 | 메모리 저장소(로그인 카운터·재설정 코드) | 워커 여러 개면 한도 N배, 코드 무효 / 재시작 시 초기화 | 워커 1·인스턴스 1, 재발급 | ☁️ Render 설정 | 아님 |
 | R5 | 플랫폼 HTTP 로그의 쿼리 문자열 | 학생 이름이 플랫폼 로그에 남을 수 있음 | 로그 접근 권한·보존 기간 제한 | ☁️ 11-5 | 아님 |
@@ -414,4 +414,4 @@ ACADEMY_BOOTSTRAP_ADMIN=1 ACADEMY_BOOTSTRAP_EMAIL=<…> ACADEMY_BOOTSTRAP_PASSWO
 
 **미해결 배포 차단 결함: 없음**
 
-GitHub Push, Supabase 생성·Migration, Render·Vercel 배포, 유료 서비스 활성화는 수행하지 않았다(사용자가 11-5에서 직접 진행).
+GitHub Push, Neon 생성·Migration, Render·Vercel 배포, 유료 서비스 활성화는 수행하지 않았다(사용자가 11-5에서 직접 진행).

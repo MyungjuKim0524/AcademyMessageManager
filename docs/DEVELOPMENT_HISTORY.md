@@ -359,9 +359,9 @@ Java 경로(Swing / Java HttpServer → service → port → JDBC → PostgreSQL
 
 ### 부분 완료 또는 검증 필요
 
-- 실제 클라우드(Render·Vercel·Supabase) 기동·연결: 로컬 모의 검증만 했다(`docs/reviews/phase11_4_release_readiness.md` 12절).
+- 실제 클라우드(Render·Vercel·Neon) 기동·연결: 로컬 모의 검증만 했다(`docs/reviews/phase11_4_release_readiness.md` 12절).
 - Java 레거시: 이 저장소에 포함하지 않는다. Migration 010(`import_*` 삭제) 이후 Java 테스트를 다시 실행한 기록은 없다.
-- 빈 DB에서 001→011 전체 재구성 검증: 미실행(사용자 보류). Migration 왕복은 기존 테스트가 일부 구간(005/007/009 ↔ head)만 검증한다.
+- 빈 PostgreSQL 17 일회용 DB에서 001→011 전체 재구성 검증 완료(2026-11-23, Phase 11-5-B). `011_staff_deleted_status` head, `btree_gist`, FK·UNIQUE·CHECK·Trigger와 Seed 멱등성·부분 복구를 확인했다.
 - 개발 DB 불변조건 점검: 미실행(사용자 보류). revision은 2026-11-21에 확인했다.
 - Phase 11 업무 시나리오 수동 점검표(`docs/phase11-manual-scenario-checklist.md`): 실행 결과는 이 문서에서 확인하지 않았다.
 
@@ -380,10 +380,10 @@ Java 경로(Swing / Java HttpServer → service → port → JDBC → PostgreSQL
 | 단계 | 작업 | 근거 |
 |---|---|---|
 | ~~Phase 11-4~~ 완료 | 운영 실행 모드(SEC-04), 유휴 만료(SEC-05), 비밀번호 변경·재설정(SEC-10), 기존 React 실패 테스트 수정 | `phase11_4_b_runtime_account_results.md`, `phase11_4_release_readiness.md` |
-| Phase 11-5 | 첫 커밋·GitHub 업로드(사용자 승인 후), 사용자가 직접 수행하는 배포(Supabase + Render + Vercel)와 배포 직후 진단 절차, CI에 pip-audit·npm audit 추가 | `deployment/phase11_5_security_deployment_guide.md`, `phase11_4_release_readiness.md` 7~11절 |
+| Phase 11-5 | 첫 커밋·GitHub 업로드(사용자 승인 후), 사용자가 직접 수행하는 배포(Neon + Render + Vercel)와 배포 직후 진단 절차, CI에 pip-audit·npm audit 추가 | `deployment/phase11_5_security_deployment_guide.md`, `deployment/phase11_5_a_neon_guide.md`, `phase11_4_release_readiness.md` 7~11절 |
 | 배포 이후 | 보강 신청 관리 웹 이식 여부 결정. 현재 릴리스에는 넣지 않고, 업무 안정화·배포 후 필요성과 구현 비용을 검토한다 | 9.9절, `ENGINEERING_RETROSPECTIVE.md` 9절 |
 | 미정(범위·일정 미정) | **AI 기능 추가 검토**. FastAPI(Python)를 고른 이유 중 하나로, 학원 업무 자동화에 AI 기능을 더하는 방향이다. 구체 기능·데이터·개인정보 처리 방식은 정해지지 않았고, 현재 코드에 AI 기능은 없다 | `ENGINEERING_RETROSPECTIVE.md` 1절 |
-| 미정 | 빈 DB 001→011 재구성 검증, 개발 DB 불변조건 읽기 전용 점검(승인 시) | `phase11_3_integrity_remediation.md` 12~13절 |
+| 미정 | 개발 DB 불변조건 읽기 전용 점검(승인 시). 빈 DB 001→011 재구성은 Phase 11-5-B에서 완료 | `phase11_3_integrity_remediation.md` 12~13절 |
 | 결정됨 | Java 레거시는 저장소에 포함하지 않음(2026-11-21). 기존 Java 저장소 태그가 이력의 근거 | 2·9절 |
 | 미정 | 실제 발송 도입 시 INT-I1(외부 I/O·트랜잭션 분리) | 아래 향후 검토 과제 |
 

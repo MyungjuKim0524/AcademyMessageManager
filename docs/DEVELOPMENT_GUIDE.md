@@ -90,7 +90,7 @@ Remove-Item Env:ACADEMY_TEST_DB_PASSWORD
 
 ## 6. 개발 비용·외부 연동 정책
 
-- 개인 학습·포트폴리오 목적이라 로컬 환경과 무료 오픈소스를 기본으로 쓴다. 배포는 무료 플랜(Supabase·Render·Vercel)을 전제로 한다.
+- 개인 학습·포트폴리오 목적이라 로컬 환경과 무료 오픈소스를 기본으로 쓴다. 배포는 무료 플랜(Neon·Render·Vercel)을 전제로 한다.
 - 실제 이메일·SMS는 보내지 않는다. 발송은 `MockSender`만 쓴다(`backend/app/modules/notifications/sender.py`).
 - 실제 발송(SMS/LMS)으로 바꾸기 전에는 외부 발송 I/O와 DB 트랜잭션을 분리해야 한다(INT-I1). 자세한 내용은 [Development History 8절](DEVELOPMENT_HISTORY.md#8-future-roadmap)에 있다.
 - AI 코딩 도구 사용량과 계정 과금은 저장소로 통제할 수 없으므로 개발자가 직접 확인한다.

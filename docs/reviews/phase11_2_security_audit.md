@@ -148,7 +148,7 @@
   - 쿠키 Secure 기본 켜짐
   - DB API는 `ACADEMY_DB_MODE ∈ {development,test}`이고 루프백일 때만 열린다(`security.py:8-19`)
   - DB URL은 허용 목록(dev 55431 / test 55432)과 일치해야 한다(`db/safety.py`)
-  - **즉, 배포 환경(Render/Supabase)에서는 현재 코드로 API가 열리지 않는다**(SEC-04, 의도된 로컬 정책).
+  - **즉, 배포 환경(Render/Neon)에서는 현재 코드로 API가 열리지 않는다**(SEC-04, 의도된 로컬 정책).
 - 테스트 환경 분리: 통합 테스트는 컨테이너 라벨(`isolated-test`/`destructive-tests=allowed`)·DB 이름·사용자·포트를 확인한 뒤에만 실행한다. Phase 11-0에서 PS 5.1 라벨 검사 결함을 수정했다.
 
 ## 9. 발견 문제와 근거
@@ -255,7 +255,7 @@
 |---|---|
 | 배포 아키텍처: Vercel Rewrite(같은 출처) + `ACADEMY_CORS_ORIGINS`에 운영 도메인만 + Secure 쿠키 + HSTS·`__Host-` 접두사 검토 | 5절, SEC-09 |
 | 프록시 헤더 신뢰 범위(uvicorn `--proxy-headers --forwarded-allow-ips`), 로그인 제한 키·저장소 | SEC-03 |
-| `production` 실행 모드, Supabase TLS, 허용 DB 검증 방식 | SEC-04 |
+| `production` 실행 모드, 운영 DB(Neon) TLS, 허용 DB 검증 방식 | SEC-04 |
 | 유휴 만료·만료 세션 정리(11-2에서 안 하면) | SEC-05 |
 | 업로드 해제 크기·전체 행 상한 | SEC-06 |
 | 운영 로그 정제(`hide_parameters`), 로그인 실패 로그 정책 | SEC-07 |

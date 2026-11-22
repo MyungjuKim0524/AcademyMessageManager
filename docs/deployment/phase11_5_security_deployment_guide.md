@@ -107,7 +107,9 @@ uvicorn app.main:app --host 0.0.0.0 --port $PORT --no-proxy-headers --no-access-
 - **`btree_gist` 확장을 만들 권한이 필요하다.**
   - `007_phase71_sessions_pauses`가 `CREATE EXTENSION IF NOT EXISTS btree_gist`를 실행한다. 휴원 기간이 겹치지 않게 막는 EXCLUDE 제약에 필요하다.
   - PostgreSQL 13 이상에서 `btree_gist`는 "trusted" 확장이라, 슈퍼유저가 아니어도 해당 DB에 CREATE 권한이 있으면 만들 수 있다.
-  - ☁️ Supabase에서는 Migration 전에 대시보드(Database → Extensions)에서 `btree_gist`를 미리 켜 두는 것을 권장한다. 이미 켜져 있으면 007의 `IF NOT EXISTS`가 아무것도 하지 않는다. 권한이 없으면 007에서 멈추고, 그때까지의 Migration은 각자 커밋되어 006까지 적용된 상태로 남는다.
+  - ☁️ Neon은 프로젝트 소유자 역할로 Migration을 실행하면 007이 확장을 직접 만든다. 대시보드에서 미리 켜는 단계는 없다. 생성되었는지는 `phase11_5_a_neon_guide.md` 5절 쿼리로 확인한다.
+  - 권한이 없으면 007에서 실패한다. `alembic/env.py`는 한 번의 `upgrade` 전체를 하나의 트랜잭션으로 실행하므로, 이때 001~006도 함께 롤백되어 DB는 빈 상태로 돌아간다.
+  - Neon 연결·Migration·Seed 절차 전체는 `phase11_5_a_neon_guide.md`를 따른다.
 
 **최초 관리자 계정**: 서비스 셸에서 한 번만 실행한다. 값은 셸 입력으로만 넣고, 실행 후 환경변수를 지운다. 문서·채팅·커밋에 남기지 않는다.
 ```
