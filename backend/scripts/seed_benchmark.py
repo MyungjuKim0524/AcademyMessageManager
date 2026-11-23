@@ -32,6 +32,7 @@ from dataclasses import dataclass
 from datetime import date
 from uuid import uuid4
 
+from psycopg import pq
 from seed_demo import ALLOWED_MODES, SeedError, check_schema  # same folder (read-only reuse)
 from seed_demo import STUDENTS as DEMO_STUDENTS
 from sqlalchemy import func, select
@@ -159,6 +160,7 @@ def register(db, classes: dict[str, Classroom], admin: StaffUser) -> dict[str, i
     request_id = str(uuid4())
     done = {"students": 0, "enrollments": 0, "emails_filled": 0, "emails_kept": 0}
     for plan_row in STUDENTS:
+        STEP["name"] = f"register {plan_row.name}"
         classroom = classes[plan_row.class_name]
         student = db.scalar(
             select(Student).where(*_student_where(plan_row.name, plan_row.school_name))
@@ -289,6 +291,40 @@ def verify(db) -> tuple[list[str], list[str]]:
 
 
 # --------------------------------------------------------------------------- entry point
+STEP = {"name": "start"}  # last step entered, reported if the run fails
+
+
+def describe_db_error(exc: BaseException) -> str:
+    """Error class and SQLSTATE only — never the message, which can hold connection details
+    or row values. SQLSTATE names the cause (e.g. 42P01 / 42703 schema, 42501 privilege);
+    without one the driver raised it client-side, and the module it came from is named
+    (e.g. psycopg.conninfo = the connection settings were refused before connecting)."""
+    orig = getattr(exc, "orig", None) or exc
+    sqlstate = getattr(orig, "sqlstate", None)
+    if sqlstate:
+        return f"{type(exc).__name__} [{type(orig).__name__}, SQLSTATE {sqlstate}]"
+    tb = orig.__traceback__
+    while tb is not None and tb.tb_next is not None:
+        tb = tb.tb_next
+    origin = tb.tb_frame.f_globals.get("__name__", "?") if tb is not None else "?"
+    return f"{type(exc).__name__} [{type(orig).__name__}, client-side, raised in {origin}]"
+
+
+def check_connection_options(url) -> None:
+    """Offline: the keyword arguments SQLAlchemy will hand to psycopg for this URL must all
+    be libpq connection options. psycopg checks them only after resolving the host and then
+    fails client-side (ProgrammingError, no SQLSTATE). Names are reported, never values."""
+    _, kwargs = url.get_dialect()().create_connect_args(url)
+    known = {option.keyword.decode() for option in pq.Conninfo.get_defaults()}
+    unknown = sorted(str(name)[:40] for name in kwargs if name not in known)
+    if unknown:
+        raise SeedError(
+            "ACADEMY_DATABASE_URL has query option(s) that PostgreSQL (libpq) does not know: "
+            + ", ".join(unknown)
+            + " — remove them; keep sslmode=require (and channel_binding=require)"
+        )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Benchmark students for the upload workbook")
     parser.add_argument("--check", action="store_true", help="read-only verification only")
@@ -296,14 +332,23 @@ def main(argv: list[str] | None = None) -> int:
 
     url = check_target(seeding=not args.check)
     print(f"target: {url.host} / {url.database} (mode {get_settings().db_mode})")
+    check_connection_options(url)
     engine = create_db_engine()
     try:
+        # Leaving this block closes the session, which rolls back an unfinished transaction:
+        # on an error only the student being written is undone; students committed before it
+        # stay complete (student + enrolment) and a re-run continues from there.
         with create_session_factory(engine)() as db:
+            STEP["name"] = "schema check"
             check_schema(db)
             if not args.check:
+                STEP["name"] = "benchmark classes"
                 classes = find_classes(db)
-                done = register(db, classes, find_admin(db))
+                STEP["name"] = "administrator"
+                admin = find_admin(db)
+                done = register(db, classes, admin)
                 print("changes: " + ", ".join(f"{k}={v}" for k, v in done.items()))
+            STEP["name"] = "verification"
             problems, notes = verify(db)
     finally:
         engine.dispose()
@@ -325,5 +370,8 @@ if __name__ == "__main__":
         print(f"ERROR: {detail}", file=sys.stderr)
         raise SystemExit(1) from None
     except Exception as exc:  # no exception text: it may contain connection details
-        print(f"ERROR: benchmark seed failed ({type(exc).__name__})", file=sys.stderr)
+        print(
+            f"ERROR: benchmark seed failed at '{STEP['name']}': {describe_db_error(exc)}",
+            file=sys.stderr,
+        )
         raise SystemExit(1) from None

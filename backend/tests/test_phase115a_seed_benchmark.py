@@ -241,6 +241,104 @@ def test_check_reports_an_existing_mock_failure_address():
     assert set(db.calls) <= {"scalar", "scalars", "execute", "rollback"}
 
 
+# ------------------------------------------------------------------------------ failures
+def _db_error(psycopg_error):
+    from sqlalchemy.exc import ProgrammingError
+
+    return ProgrammingError("SELECT 1", {}, psycopg_error)
+
+
+@pytest.mark.parametrize(
+    ("error", "expected"),
+    [
+        ("DuplicatePreparedStatement", "SQLSTATE 42P05"),
+        ("InvalidSqlStatementName", "SQLSTATE 26000"),
+        ("UndefinedColumn", "SQLSTATE 42703"),
+        ("InsufficientPrivilege", "SQLSTATE 42501"),
+    ],
+)
+def test_failure_report_names_the_sqlstate_but_not_the_message(error, expected):
+    import psycopg.errors
+
+    exc = _db_error(getattr(psycopg.errors, error)("detail with secret-value"))
+    report = bench.describe_db_error(exc)
+    assert report == f"ProgrammingError [{error}, {expected}]"
+    assert "secret-value" not in report
+
+
+def test_client_side_conninfo_error_names_its_origin_not_its_message():
+    """The error reported from Neon: psycopg refuses an unknown connection keyword before
+    connecting (ProgrammingError, no SQLSTATE). Reproduced offline with make_conninfo."""
+    import psycopg
+    from psycopg.conninfo import make_conninfo
+
+    with pytest.raises(psycopg.ProgrammingError) as caught:
+        make_conninfo("", host="h", password="secret-value", pgbouncer="true")
+    report = bench.describe_db_error(_db_error(caught.value))
+    assert report == "ProgrammingError [ProgrammingError, client-side, raised in psycopg.conninfo]"
+    assert "secret-value" not in report and "pgbouncer" not in report
+
+
+NEON_URL = (
+    "postgresql+psycopg://demo_user:secret-value@ep-demo.ap-southeast-1.aws.neon.tech/neondb"
+    "?sslmode=require&channel_binding=require"
+)
+
+
+def test_neon_url_options_are_all_known_to_libpq():
+    from sqlalchemy.engine import make_url
+
+    bench.check_connection_options(make_url(NEON_URL))  # no error
+
+
+@pytest.mark.parametrize("extra", ["pgbouncer=true", "schema=public", "ssl=true", "foo=1"])
+def test_unknown_url_option_is_refused_before_connecting_by_name_only(extra):
+    from sqlalchemy.engine import make_url
+
+    name = extra.split("=")[0]
+    with pytest.raises(bench.SeedError) as caught:
+        bench.check_connection_options(make_url(f"{NEON_URL}&{extra}"))
+    message = str(caught.value)
+    assert name in message
+    assert "secret-value" not in message and "ep-demo" not in message
+
+
+def test_error_mid_run_stops_at_that_student(monkeypatch):
+    class FailingOps(RecordingOps):
+        def create_student(self, *_args, **_kwargs):
+            RecordingOps.calls.append("create_student")
+            if len(RecordingOps.calls) == 3:
+                raise _db_error(Exception("boom"))
+
+    RecordingOps.calls = []
+    monkeypatch.setattr(bench, "LearningOpsService", FailingOps)
+    with pytest.raises(Exception, match="boom"):
+        bench.register(RecordingDB(), CLASSES, ADMIN)
+    assert RecordingOps.calls == ["create_student"] * 3  # nothing after the failing student
+    assert bench.STEP["name"] == "register 가상학생03"
+
+
+def test_leaving_the_session_block_on_an_error_rolls_back_uncommitted_writes():
+    """main() writes inside ``with session_factory() as db``; an error leaves that block and
+    the unfinished transaction is rolled back (SQLAlchemy Session.close)."""
+    from sqlalchemy import Column, Integer, MetaData, Table, create_engine, insert
+    from sqlalchemy.orm import sessionmaker
+
+    engine = create_engine("sqlite://")
+    rows = Table("rows", MetaData(), Column("id", Integer, primary_key=True))
+    rows.metadata.create_all(engine)
+    factory = sessionmaker(bind=engine)
+    with factory() as db:
+        db.execute(insert(rows).values(id=1))
+        db.commit()  # an earlier, completed student
+    with pytest.raises(RuntimeError), factory() as db:
+        db.execute(insert(rows).values(id=2))  # the student being written
+        raise RuntimeError("error before commit")
+    with factory() as db:
+        assert [r.id for r in db.execute(rows.select())] == [1]
+    engine.dispose()
+
+
 def test_benchmark_script_only_adds_and_fills_in():
     source = (SCRIPTS / "seed_benchmark.py").read_text(encoding="utf-8")
     for forbidden in (
