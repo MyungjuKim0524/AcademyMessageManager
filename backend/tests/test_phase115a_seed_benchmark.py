@@ -13,6 +13,7 @@ import pytest
 
 from app.modules.learningops.schemas import StudentContactUpdate, StudentCreate
 from app.modules.lesson_upload.workbook import class_type_of, parse_workbook, school_of
+from app.modules.notifications.sender import MockSender
 
 BACKEND = Path(__file__).resolve().parents[1]
 SCRIPTS = BACKEND / "scripts"
@@ -92,29 +93,19 @@ def test_every_sample_workbook_row_has_a_planned_student():
     planned = {(s.class_name, s.name) for s in bench.STUDENTS}
     rows = [(b.class_name, r.name) for b in parse_workbook(SAMPLE.read_bytes()) for r in b.students]
     assert len(rows) == 60 and set(rows) == planned
-    present = {
-        r.name for b in parse_workbook(SAMPLE.read_bytes()) for r in b.students
-        if r.attendance in ("PRESENT", "LATE")
-    }
-    # Mock retry / fail scenarios only happen for students who get a draft (attended).
-    for no in bench.RETRY_NOS | bench.FAIL_NOS:
-        assert f"가상학생{no:02d}" in present
 
 
-def test_emails_are_fictional_and_cover_the_mock_scenarios():
+def test_emails_are_fictional_and_never_fail_a_mock_send():
     emails = [s.parent_email for s in bench.STUDENTS]
     assert len(set(emails)) == 60
-    assert all(e.startswith("bench.parent") and e.endswith(".invalid") for e in emails)
-    domains = [e.rsplit("@", 1)[1] for e in emails]
-    assert domains.count("mock-retry.invalid") == 5
-    assert domains.count("mock-fail.invalid") == 5
-    assert domains.count("example.invalid") == 50
-    for name in bench.CLASS_NAMES:  # one retry and one failure in every class
-        class_domains = [s.parent_email.rsplit("@", 1)[1] for s in bench.STUDENTS
-                         if s.class_name == name]
-        assert class_domains.count("mock-retry.invalid") == 1
-        assert class_domains.count("mock-fail.invalid") == 1
+    assert all(e.startswith("bench.parent") and e.endswith("@example.invalid") for e in emails)
     assert all(s.parent_name.startswith("벤치보호자") for s in bench.STUDENTS)
+    # The real Mock Sender accepts every planned address on the first attempt.
+    sender = MockSender()
+    assert all(sender.send(e, "본문", attempt_no=1).success for e in emails)
+    # And the failing domains named in the script are the ones the sender fails on.
+    for domain in bench.FAILING_DOMAINS:
+        assert not sender.send(f"x@{domain}", "본문", attempt_no=1).success
 
 
 def test_plan_passes_the_application_request_schemas():
@@ -231,6 +222,23 @@ def test_check_only_reads(monkeypatch):
     problems, _ = bench.verify(db)
     assert set(db.calls) <= {"scalar", "scalars", "execute", "rollback"}
     assert any("not registered" in p for p in problems)  # empty answers are reported
+
+
+def test_check_reports_an_existing_mock_failure_address():
+    """An address kept from before (never overwritten) that would fail a mock send is a
+    --check failure, so it is found before sending."""
+    classes = [SimpleNamespace(id=i + 1) for i in range(len(bench.CLASS_NAMES))]
+    queue = list(classes)
+    for s in bench.STUDENTS:
+        email = "bench.parent01@mock-fail.invalid" if s.no == 1 else s.parent_email
+        queue += [
+            SimpleNamespace(id=s.no, parent_email=email),
+            SimpleNamespace(status="ACTIVE", enrolled_at=bench.ENROLLED_AT),
+        ]
+    db = RecordingDB(queue)
+    problems, _ = bench.verify(db)
+    assert problems == ["가상학생01: parent e-mail is on a mock-failure domain"]
+    assert set(db.calls) <= {"scalar", "scalars", "execute", "rollback"}
 
 
 def test_benchmark_script_only_adds_and_fills_in():

@@ -1,7 +1,8 @@
 """Benchmark (벤치마크) students for the weekly-upload test workbook: 60 fictional students in the
 five "토6" classes, each with a fictional parent e-mail, so that uploading
 ``.dev-data/samples/가상학생-60명-5개반-토6.xlsx`` matches every row to a registered student
-(MATCHED) and the message flow (drafts → review → mock send / retry) can be exercised.
+(MATCHED) and the message flow (drafts → review → mock send) can be exercised. Every parent
+address is on ``example.invalid``, so no mock send of this data set fails.
 
 Kept apart from the demo seed (``seed_demo.py``):
 - students are "가상학생01"..."가상학생60" (demo: "시연학생…"), parents "벤치보호자NN",
@@ -61,9 +62,10 @@ STUDENTS_PER_CLASS = 12
 # eligible (``eligible_on``) and matches instead of asking for a "new student" decision.
 ENROLLED_AT = date(2026, 9, 1)
 CLASS_NAMES = ("고1 토6A", "고1 토6B", "검증고2 토6", "테스트고2 토6", "가짜고2 토6")
-# Present in the sample workbook, one of each per class (Mock Sender rules, sender.py):
-RETRY_NOS = frozenset({5, 17, 29, 42, 53})  # first send fails, a manual retry succeeds
-FAIL_NOS = frozenset({9, 21, 33, 46, 57})  # always rejected (recipient problem)
+# Every parent address uses example.invalid, which the Mock Sender always accepts: this data
+# set produces no mock send failures. Domains the Mock Sender fails on (sender.py):
+EMAIL_DOMAIN = "example.invalid"
+FAILING_DOMAINS = frozenset({"mock-fail.invalid", "mock-retry.invalid"})
 
 
 @dataclass(frozen=True)
@@ -75,14 +77,6 @@ class BenchStudent:
     school_name: str | None
     parent_name: str
     parent_email: str
-
-
-def _domain(no: int) -> str:
-    if no in RETRY_NOS:
-        return "mock-retry.invalid"
-    if no in FAIL_NOS:
-        return "mock-fail.invalid"
-    return "example.invalid"
 
 
 def plan() -> tuple[BenchStudent, ...]:
@@ -99,7 +93,7 @@ def plan() -> tuple[BenchStudent, ...]:
                     class_type=class_type,
                     school_name=school_of(class_name, class_type),
                     parent_name=f"벤치보호자{no:02d}",
-                    parent_email=f"bench.parent{no:02d}@{_domain(no)}",
+                    parent_email=f"bench.parent{no:02d}@{EMAIL_DOMAIN}",
                 )
             )
     return tuple(students)
@@ -238,6 +232,9 @@ def verify(db) -> tuple[list[str], list[str]]:
             problems.append(f"{row.name}: parent e-mail missing")
         elif not email.endswith(".invalid"):
             problems.append(f"{row.name}: parent e-mail is not a .invalid address")
+        elif email.rsplit("@", 1)[-1] in FAILING_DOMAINS:
+            # Kept as it is (never overwritten), but it would make a mock send fail.
+            problems.append(f"{row.name}: parent e-mail is on a mock-failure domain")
         elif email != row.parent_email:
             notes.append(f"{row.name}: parent e-mail differs from the plan (kept)")
         if email:
