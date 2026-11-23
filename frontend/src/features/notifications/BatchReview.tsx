@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type Key } from 'react'
 import { Alert, Button, Card, Empty, Popconfirm, Select, Space, Table, Tag, Typography } from 'antd'
 import { toApiClientError } from '../../shared/api/ApiClientError'
 import { lessonTitle, todayLocal } from '../classwork/common'
@@ -11,6 +11,9 @@ const SENDABLE: api.NotificationStatus[] = ['APPROVED', 'MOCK_FAILED']
 const OUTCOME: Record<api.BatchResult['outcome'], string> = {
   APPROVED: '확정', MOCK_SENT: '모의 발송 성공', MOCK_FAILED: '모의 발송 실패', SKIPPED: '제외',
 }
+/** Absence notes the server puts on a message (notifications/service.py `_attention`). */
+const ABSENCE_NOTES: readonly string[] = ['결석', '인정결석']
+const absenceOf = (m: api.BatchMessage) => m.attention.find((note) => ABSENCE_NOTES.includes(note))
 
 type Props = Pick<NotificationContext, 'role' | 'lessons' | 'notify' | 'fail'> & {
   /** Opens one message in the one-by-one view (to edit, revoke or cancel it). */
@@ -66,6 +69,24 @@ export function BatchReview({ role, lessons, notify, fail, onOpen, initialLesson
   const lesson = lessons.find((row) => row.id === lessonId)
   const title = lesson ? lessonTitle(lesson) : ''
   const approver = canApprove(role)
+  // 2026-11-23: absent students' guardians are often phoned by the front desk, so a message to
+  // them is a one-by-one choice: "select all" leaves them out (a box ticked by hand is kept) and
+  // the confirm dialog counts them. Clicking "select all" again clears the selection.
+  const absentIds = new Set(items.filter((m) => absenceOf(m)).map((m) => m.id))
+  const absentConfirmable = confirmable.filter((m) => absentIds.has(m.id)).length
+  const chosen = items.filter((m) => selected.includes(m.id))
+  const chosenAbsent = chosen.filter((m) => absenceOf(m) === '결석').length
+  const chosenExcused = chosen.filter((m) => absenceOf(m) === '인정결석').length
+  const absenceWarning = chosenAbsent + chosenExcused > 0
+    ? ` 이 중 ${[chosenAbsent && `결석 ${chosenAbsent}건`, chosenExcused && `인정결석 ${chosenExcused}건`].filter(Boolean).join(' · ')}이 포함되어 있습니다. 보호자에게 이미 연락했는지 확인하세요.`
+    : ''
+  const onSelect = (keys: Key[], _rows: api.BatchMessage[], info: { type: string }) => {
+    const next = keys as number[]
+    if (info.type !== 'all') { setSelected(next); return }
+    const picked = next.filter((id) => !absentIds.has(id) || selected.includes(id))
+    const unchanged = picked.length === selected.length && picked.every((id) => selected.includes(id))
+    setSelected(unchanged ? [] : picked)
+  }
 
   const report = (kind: 'approve' | 'send', outcome: api.BatchResult[]) => {
     setResults({ kind, items: outcome })
@@ -134,7 +155,7 @@ export function BatchReview({ role, lessons, notify, fail, onOpen, initialLesson
           locale={{ emptyText: <Empty description={lessonId === undefined ? '수업을 선택하세요.' : '이 수업의 메시지가 없습니다.'} /> }}
           rowSelection={approver ? {
             selectedRowKeys: selected,
-            onChange: (keys) => setSelected(keys as number[]),
+            onChange: onSelect,
             getCheckboxProps: (m) => ({ disabled: !confirmable.includes(m), 'aria-label': `${m.student_name} 확정 선택` }),
           } : undefined}
           columns={[
@@ -163,7 +184,7 @@ export function BatchReview({ role, lessons, notify, fail, onOpen, initialLesson
           <Space wrap>
             <Popconfirm
               title={`선택한 ${selected.length}건을 확정할까요?`}
-              description={`${title} 메시지 ${selected.length}건을 확정합니다. 목록의 본문을 확인했는지 다시 봐 주세요. 그사이 원본이 바뀐 메시지는 확정하지 않고 결과에 따로 표시합니다.`}
+              description={`${title} 메시지 ${selected.length}건을 확정합니다.${absenceWarning} 목록의 본문을 확인했는지 다시 봐 주세요. 그사이 원본이 바뀐 메시지는 확정하지 않고 결과에 따로 표시합니다.`}
               okText="확정" cancelText="닫기" onConfirm={() => void approve()} disabled={selected.length === 0}
             >
               <Button type="primary" disabled={selected.length === 0 || busy}>{`선택한 ${selected.length}건 확정`}</Button>
@@ -176,6 +197,9 @@ export function BatchReview({ role, lessons, notify, fail, onOpen, initialLesson
               <Button disabled={sendable.length === 0 || busy}>{`확정된 ${sendable.length}건 모의 발송`}</Button>
             </Popconfirm>
             <Typography.Text type="secondary">고칠 메시지는 선택하지 말고 학생 이름을 눌러 한 건씩 수정하세요.</Typography.Text>
+            {absentConfirmable > 0 && (
+              <Typography.Text type="secondary">{`전체 선택은 결석·인정결석 ${absentConfirmable}명을 빼고 선택합니다. 그 학생에게도 보내려면 직접 체크하세요.`}</Typography.Text>
+            )}
           </Space>
         )}
         {results && (

@@ -239,6 +239,10 @@ Java 경로(Swing / Java HttpServer → service → port → JDBC → PostgreSQL
   - ERD: 코드에서 자동 생성하는 `docs/database/ERD.md`를 추가했다(`backend/scripts/generate_erd.py`). 이전 ERD는 Java v1.2 기록으로 표시했다.
   - Migration 절차 보완: 001이 루트의 `sql/`을 읽는다는 점, 007의 `btree_gist` 확장 권한을 배포 가이드 4절과 릴리스 준비도 5·7절에 추가했다.
   - README 재구성: 소개·기능·아키텍처·버전 이력 중심으로 바꿨다. 로컬 환경·테스트·개발 정책은 `docs/DEVELOPMENT_GUIDE.md`로 옮겼다.
+- **반 일괄 처리 결석생 선택 규칙**(2026-11-23, 사용자 요청, 프론트엔드 전용)
+  - 배경: 결석·인정결석 학생도 설계대로 초안이 만들어지는데, 전체 선택으로 함께 확정·발송될 수 있었다.
+  - 전체 선택은 결석·인정결석 메시지를 빼고 선택하고, 확정 확인창에 포함된 결석·인정결석 건수를 표시한다. 직접 체크하면 지금처럼 확정·발송할 수 있다.
+  - 초안 생성·확정·발송 규칙, API, DB는 바꾸지 않았다(`docs/phase11-batch-review.md` 동작 2).
 
 ## 4. Database Architecture
 

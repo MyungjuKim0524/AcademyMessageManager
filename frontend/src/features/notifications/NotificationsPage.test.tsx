@@ -600,6 +600,8 @@ describe('NotificationsPage', () => {
     fireEvent.click(screen.getByLabelText('박둘 확정 선택'))
     fireEvent.click(screen.getByText('선택한 2건 확정'))
     const approvePop = (await screen.findByText('선택한 2건을 확정할까요?')).closest('.ant-popover') as HTMLElement
+    // A hand-picked absent student is allowed, and named in the dialog.
+    expect(within(approvePop).getByText(/이 중 결석 1건이 포함되어 있습니다/)).toBeInTheDocument()
     fireEvent.click(within(approvePop).getByText('확정'))
     await waitFor(() => expect(api.batchApprove).toHaveBeenCalledWith(7, [{ id: 11, version: 3 }, { id: 12, version: 3 }]))
     expect(await screen.findByText('박둘: 제외 — 다른 사용자가 먼저 변경했습니다.')).toBeInTheDocument()
@@ -611,6 +613,42 @@ describe('NotificationsPage', () => {
     await waitFor(() => expect(api.batchMockSend).toHaveBeenCalledWith(7, [{ id: 11, idempotency_key: expect.any(String) }]))
     expect(await screen.findByText('모의 발송 성공 1건 (실제 문자·이메일은 전송되지 않음)')).toBeInTheDocument()
     expect(api.mockSend).not.toHaveBeenCalled()  // one request for the class, not one per message
+  })
+
+  it('leaves absent students out of "select all", keeps one ticked by hand and counts them in the dialog', async () => {
+    asRole('ASSISTANT')
+    const message = (patch: Partial<api.BatchMessage>): api.BatchMessage => ({
+      ...item, body: '학생 안내', source_changed: false, attention: [], ...patch,
+    })
+    vi.mocked(api.batchView).mockResolvedValue({ lesson_id: 7, classroom_id: 1, items: [
+      message({}),
+      message({ id: 12, enrollment_id: 2, student_name: '박둘', attention: ['결석', '미응시'] }),
+      message({ id: 13, enrollment_id: 3, student_name: '이셋', attention: ['인정결석'] }),
+      message({ id: 14, enrollment_id: 4, student_name: '최넷' }),
+    ] })
+    renderPage()
+    fireEvent.click(await screen.findByText('검토·발송'))
+    expect(await screen.findByText('전체 선택은 결석·인정결석 2명을 빼고 선택합니다. 그 학생에게도 보내려면 직접 체크하세요.')).toBeInTheDocument()
+    const selectAll = () => document.querySelector('thead input[type="checkbox"]') as HTMLInputElement
+
+    fireEvent.click(selectAll())
+    expect(await screen.findByText('선택한 2건 확정')).toBeInTheDocument()
+    expect(screen.getByLabelText('김하나 확정 선택')).toBeChecked()
+    expect(screen.getByLabelText('최넷 확정 선택')).toBeChecked()
+    expect(screen.getByLabelText('박둘 확정 선택')).not.toBeChecked()
+    expect(screen.getByLabelText('이셋 확정 선택')).not.toBeChecked()
+
+    fireEvent.click(selectAll())  // again: clears
+    expect(await screen.findByText('선택한 0건 확정')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByLabelText('박둘 확정 선택'))  // an absence chosen by hand is kept
+    fireEvent.click(selectAll())
+    expect(await screen.findByText('선택한 3건 확정')).toBeInTheDocument()
+    expect(screen.getByLabelText('이셋 확정 선택')).not.toBeChecked()
+    fireEvent.click(screen.getByText('선택한 3건 확정'))
+    const pop = (await screen.findByText('선택한 3건을 확정할까요?')).closest('.ant-popover') as HTMLElement
+    expect(within(pop).getByText(/이 중 결석 1건이 포함되어 있습니다\. 보호자에게 이미 연락했는지 확인하세요\./)).toBeInTheDocument()
+    expect(api.batchApprove).not.toHaveBeenCalled()
   })
 
   it('uploads only the chosen time slot and reports rows already equal to the app as skipped', async () => {
