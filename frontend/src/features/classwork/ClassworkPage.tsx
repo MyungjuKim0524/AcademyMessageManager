@@ -27,7 +27,7 @@ export interface ClassworkContext {
   focus?: { lessonId?: number; day?: string }
 }
 
-const TABS = ['attendance', 'progress', 'lessons', 'grades']
+const TABS = ['lessons', 'attendance', 'progress', 'grades']
 const DAY = /^\d{4}-\d{2}-\d{2}$/
 
 /**
@@ -153,9 +153,9 @@ export function ClassworkPage() {
             activeKey={tab}
             onChange={changeTab}
             items={[
+              { key: 'lessons', label: '수업', children: <LessonsTab {...context} /> },
               { key: 'attendance', label: '출결', children: <AttendanceTab {...context} /> },
               { key: 'progress', label: '학습 현황', children: <ProgressTab {...context} active={tab === 'progress'} /> },
-              { key: 'lessons', label: '수업', children: <LessonsTab {...context} /> },
               { key: 'grades', label: '평가 관리', children: <GradesTab {...context} /> },
             ]}
           />
