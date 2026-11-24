@@ -114,6 +114,21 @@ def test_database_error_is_redacted_and_session_is_closed(
     assert closed
 
 
+def test_unknown_path_is_a_plain_not_found() -> None:
+    # An unknown path (including the API description when it is off) is "not found", not an
+    # internal error: the body used to say INTERNAL_ERROR next to a 404 status.
+    for path in ("/no-such-path", "/api/no-such-api", "/openapi.json", "/docs"):
+        response = client.get(path)
+        assert response.status_code == 404, path
+        assert response.json() == {
+            "code": "NOT_FOUND",
+            "message": "요청한 기능을 사용할 수 없습니다.",
+            "fields": [],
+        }, path
+    response = client.delete("/api/health")
+    assert (response.status_code, response.json()["code"]) == (405, "METHOD_NOT_ALLOWED")
+
+
 def test_health_contract_and_headers() -> None:
     response = client.get("/api/health")
     assert response.status_code == 200

@@ -75,6 +75,8 @@ async def compatibility_error_handler(_request: Request, exc: CompatibilityError
 
 @app.exception_handler(StarletteHTTPException)
 async def http_error_handler(_request: Request, exc: StarletteHTTPException):
+    if exc.status_code == 404:  # unknown path, or /docs·/openapi.json while they are off
+        return error_response(404, "NOT_FOUND", "요청한 기능을 사용할 수 없습니다.")
     if exc.status_code == 405:
         return error_response(405, "METHOD_NOT_ALLOWED", "허용되지 않은 HTTP 메서드입니다.")
     return error_response(exc.status_code, "INTERNAL_ERROR", "요청 처리 중 오류가 발생했습니다.")

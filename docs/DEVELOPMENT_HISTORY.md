@@ -249,7 +249,8 @@ Java 경로(Swing / Java HttpServer → service → port → JDBC → PostgreSQL
     - 확인: Render 기동·환경변수(R1), Neon 연결(R2, Direct connection), 워커·인스턴스 1개(R4), 세션 쿠키 속성, API 문서 비공개(Render 주소의 `/openapi.json`·`/docs` 404, `ACADEMY_API_DOCS` 없음), 진단 엔드포인트 꺼짐
     - 로그인 제한(R3): **구성 A′**(비밀 헤더 없음, `cf-connecting-ip`)로 운영한다. Render 환경변수로 확인했고, 진단 엔드포인트 실측(`source`, `CF-Connecting-IP` 도착)은 하지 않았다. Vercel 송신 주소 단위로 묶이는 위험(배포 가이드 3절)은 가상 데이터 전용 시연 서비스이고 재시작으로 즉시 해제되므로 수용했다.
     - 생략·미확인: 플랫폼 로그의 쿼리 문자열(R5)은 가상 데이터만 있어 생략, 무료 플랜 유휴 정지(R6)는 측정하지 않았다.
-  - 발견: 없는 경로의 404 응답 본문이 `INTERNAL_ERROR`("요청 처리 중 오류가 발생했습니다.")다(`backend/app/main.py`의 `http_error_handler`). 상태 코드는 404라 노출은 없다. 정정은 7절 미완료 항목.
+  - 발견: 없는 경로의 404 응답 본문이 `INTERNAL_ERROR`("요청 처리 중 오류가 발생했습니다.")다(`backend/app/main.py`의 `http_error_handler`). 상태 코드는 404라 노출은 없다.
+  - 수정(2026-11-25): 404는 `NOT_FOUND`("요청한 기능을 사용할 수 없습니다.")로 응답한다(`http_error_handler`). 회귀 테스트 `backend/tests/test_api.py::test_unknown_path_is_a_plain_not_found`.
 
 ## 4. Database Architecture
 
@@ -385,7 +386,6 @@ Java 경로(Swing / Java HttpServer → service → port → JDBC → PostgreSQL
 - 실제 발송 채널과 발송 트랜잭션 분리(INT-I1), 발송 이력 전용 화면
 - CI/CD, 운영 모니터링, 백업·복구 자동화
 - Kafka 이벤트(보류)
-- 없는 경로의 404 응답 오류 코드 정정(`INTERNAL_ERROR` → 404에 맞는 코드, 2026-11-25 발견, 별도 처리)
 
 ## 8. Future Roadmap
 
