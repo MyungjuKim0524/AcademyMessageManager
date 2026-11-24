@@ -4,6 +4,8 @@
 근거 문서: `docs/reviews/phase11_2_b2_results.md`, `docs/reviews/phase11_2_b2_followup_results.md`, `docs/reviews/phase11_4_b_runtime_account_results.md`
 갱신: 2026-11-21 (Phase 11-4-B) — production 실행 모드, 운영 DB URL(TLS), 유휴 세션 만료, 최초 관리자·재설정 절차 반영
 
+> **(2026-11-25) 배포 완료**: 이 가이드대로 2026-11-24에 배포했다(구성 A′). 본문의 "아직 확인하지 않았다"·"확인 필요"는 배포 전 기준 문구다. 실제 점검 결과와 남은 미확인 항목은 [`DEVELOPMENT_HISTORY.md`](../DEVELOPMENT_HISTORY.md) 3절 Phase 11 "11-5 클라우드 배포"를 본다.
+
 > **먼저 알아둘 점 — 실행 모드(SEC-04, Phase 11-4-B 반영)**: 배포 서버는 `ACADEMY_DB_MODE=production`으로 실행한다. development/test 모드는 지금도 루프백 호스트와 고정된 로컬 DB만 허용하므로, 이 두 모드로 배포하면 로그인·업무 API가 404다.
 > production 모드에서는 루프백 검사를 하지 않는다(`app/security.py`). 대신 **시작할 때 아래 조건을 모두 검사하고, 하나라도 어기면 앱이 시작되지 않는다**(`app/config.py::production_problems`, `app/main.py`). 오류 메시지에는 설정 **이름만** 나오고 값은 나오지 않는다.
 > - `ACADEMY_ENABLE_DB_APIS=1`
