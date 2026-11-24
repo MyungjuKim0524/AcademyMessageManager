@@ -72,7 +72,7 @@ PostgreSQL 17 (FK·CHECK·UNIQUE·EXCLUDE 제약, Alembic Migration 001~011)
 | Frontend | React 19, TypeScript, Vite, Ant Design, TanStack Query, Axios, React Router |
 | Database | PostgreSQL 17 |
 | Test·Quality | pytest, Vitest, Testing Library, Ruff, oxlint |
-| Infra | Docker Compose(로컬 DB), 배포 예정: Neon · Render · Vercel |
+| Infra | Docker Compose(로컬 DB), 배포: Vercel(React) · Render(FastAPI) · Neon(PostgreSQL) |
 
 ## 버전 이력
 
@@ -158,7 +158,6 @@ DB 컨테이너 준비, 환경변수, 데이터 위치 정책 등 자세한 절�
 
 ## 향후 계획
 
-- 클라우드 배포(Neon · Render · Vercel)와 배포 후 점검
 - 보호자 휴대전화 기반 SMS/LMS 발송 검토. 그 전에 외부 발송과 DB 트랜잭션 분리(INT-I1)가 필요함
 - Java 버전에 있던 보강 신청 관리의 웹 이식 검토
 - AI 기능 추가 검토(범위 미정)
