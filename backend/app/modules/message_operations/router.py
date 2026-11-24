@@ -27,26 +27,32 @@ def _service(db: Session, principal: Principal, request: Request) -> OperationsS
     return OperationsService(db, principal, getattr(request.state, "request_id", None))
 
 
-@router.get("/summary", response_model=Summary)
+@router.get("/summary", summary="메시지 처리 현황 합계·반별 건수", response_model=Summary)
 def summary(principal: Reader, db: Db, request: Request, date_from: date, date_to: date):
     """Totals and per-classroom counts over the classrooms this staff member may see."""
     return _service(db, principal, request).summary(date_from, date_to)
 
 
-@router.get("/todo", response_model=TodoList)
+@router.get("/todo", summary="대시보드 성적 안내 할 일(최근 3개월)", response_model=TodoList)
 def todo(principal: Reader, db: Db, request: Request):
     """Dashboard: unfinished notices per class lesson (last 3 months), most urgent first."""
     return _service(db, principal, request).todo()
 
 
-@router.get("/classrooms/{classroom_id}", response_model=ClassroomCounts)
+@router.get(
+    "/classrooms/{classroom_id}",
+    summary="반별 처리 현황",
+    response_model=ClassroomCounts,
+)
 def classroom_summary(
     classroom_id: int, principal: Reader, db: Db, request: Request, date_from: date, date_to: date
 ):
     return _service(db, principal, request).classroom_summary(classroom_id, date_from, date_to)
 
 
-@router.get("/obligations", response_model=ObligationPage)
+@router.get(
+    "/obligations", summary="안내 대상 목록(학생·수업별 처리 상태)", response_model=ObligationPage
+)
 def obligations(
     principal: Reader,
     db: Db,
@@ -64,7 +70,11 @@ def obligations(
     return ObligationPage(items=items, total=total, limit=limit, offset=offset)
 
 
-@router.get("/obligations/{lesson_id}/{enrollment_id}", response_model=ObligationDetail)
+@router.get(
+    "/obligations/{lesson_id}/{enrollment_id}",
+    summary="안내 대상 상세",
+    response_model=ObligationDetail,
+)
 def obligation_detail(
     lesson_id: int, enrollment_id: int, principal: Reader, db: Db, request: Request
 ):

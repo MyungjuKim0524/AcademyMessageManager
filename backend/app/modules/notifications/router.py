@@ -45,29 +45,46 @@ def _service(db: Session, principal: Principal, request: Request | None = None):
 
 
 # -------------------------------------------------------------- templates
-@router.get("/notification-templates", response_model=list[TemplateView])
+@router.get(
+    "/notification-templates", summary="메시지 템플릿 목록", response_model=list[TemplateView]
+)
 def list_templates(principal: Reader, db: Db):
     return _service(db, principal).templates()
 
 
-@router.get("/notification-templates/variables", response_model=list[TemplateVariable])
+@router.get(
+    "/notification-templates/variables",
+    summary="템플릿에 쓸 수 있는 변수 목록",
+    response_model=list[TemplateVariable],
+)
 def template_variables(principal: Reader, db: Db):
     return _service(db, principal).variables()
 
 
-@router.post("/notification-templates/validate", response_model=TemplateValidation)
+@router.post(
+    "/notification-templates/validate",
+    summary="템플릿 문법 검사",
+    response_model=TemplateValidation,
+)
 def validate_template(payload: TemplateValidate, principal: Reader, db: Db):
     return _service(db, principal).validate_template(payload.body)
 
 
 @router.post(
-    "/notification-templates", response_model=TemplateView, status_code=status.HTTP_201_CREATED
+    "/notification-templates",
+    summary="메시지 템플릿 생성",
+    response_model=TemplateView,
+    status_code=status.HTTP_201_CREATED,
 )
 def create_template(payload: TemplateCreate, principal: Writer, db: Db, request: Request):
     return _service(db, principal, request).create_template(payload)
 
 
-@router.patch("/notification-templates/{template_id}", response_model=TemplateView)
+@router.patch(
+    "/notification-templates/{template_id}",
+    summary="메시지 템플릿 수정",
+    response_model=TemplateView,
+)
 def update_template(
     template_id: int, payload: TemplateUpdate, principal: Writer, db: Db, request: Request
 ):
@@ -75,7 +92,11 @@ def update_template(
 
 
 # ------------------------------------------------------ generation flow
-@router.post("/lessons/{lesson_id}/notifications/preview", response_model=PreviewResponse)
+@router.post(
+    "/lessons/{lesson_id}/notifications/preview",
+    summary="수업 메시지 초안 미리보기(저장 안 함)",
+    response_model=PreviewResponse,
+)
 def preview_notifications(lesson_id: int, payload: GenerateRequest, principal: Reader, db: Db):
     lesson, template, items = _service(db, principal).preview(lesson_id, payload)
     return PreviewResponse(
@@ -85,6 +106,7 @@ def preview_notifications(lesson_id: int, payload: GenerateRequest, principal: R
 
 @router.post(
     "/lessons/{lesson_id}/notifications",
+    summary="수업 메시지 초안 생성",
     response_model=GenerateResponse,
     status_code=status.HTTP_201_CREATED,
 )
@@ -96,7 +118,7 @@ def create_notifications(
 
 
 # ---------------------------------------------------- review / approval
-@router.get("/notifications", response_model=NotificationPage)
+@router.get("/notifications", summary="메시지 목록", response_model=NotificationPage)
 def list_notifications(
     principal: Reader,
     db: Db,
@@ -115,12 +137,18 @@ def list_notifications(
     )
 
 
-@router.get("/notifications/{notification_id}", response_model=NotificationDetail)
+@router.get(
+    "/notifications/{notification_id}", summary="메시지 상세", response_model=NotificationDetail
+)
 def get_notification(notification_id: int, principal: Reader, db: Db):
     return _service(db, principal).detail(notification_id)
 
 
-@router.patch("/notifications/{notification_id}", response_model=NotificationDetail)
+@router.patch(
+    "/notifications/{notification_id}",
+    summary="메시지 내용 수정",
+    response_model=NotificationDetail,
+)
 def edit_notification(
     notification_id: int, payload: BodyUpdate, principal: Writer, db: Db, request: Request
 ):
@@ -138,23 +166,38 @@ def _transition(action: str):
     return handler
 
 
+_TRANSITION_SUMMARY = {
+    "submit": "검토 요청(초안 → 검토 대기)",
+    "approve": "메시지 확정",
+    "revoke": "확정 취소(확정 → 초안)",
+    "cancel": "메시지 취소(발송 안 함)",
+}
 for _action in ("submit", "approve", "revoke", "cancel"):
     router.add_api_route(
         f"/notifications/{{notification_id}}/{_action}",
         _transition(_action),
         methods=["POST"],
         response_model=NotificationDetail,
+        summary=_TRANSITION_SUMMARY[_action],
     )
 
 
 # ------------------------------------------- class batch (one class lesson at a time)
-@router.get("/lessons/{lesson_id}/notifications/batch", response_model=BatchView)
+@router.get(
+    "/lessons/{lesson_id}/notifications/batch",
+    summary="반 단위 일괄 검토 화면 데이터",
+    response_model=BatchView,
+)
 def batch_view(lesson_id: int, principal: Reader, db: Db):
     """Every active message of the lesson with its body, for reviewing the class on one screen."""
     return _service(db, principal).batch_view(lesson_id)
 
 
-@router.post("/lessons/{lesson_id}/notifications/batch-approve", response_model=BatchResponse)
+@router.post(
+    "/lessons/{lesson_id}/notifications/batch-approve",
+    summary="반 단위 일괄 확정",
+    response_model=BatchResponse,
+)
 def batch_approve(
     lesson_id: int, payload: BatchApproveRequest, principal: Writer, db: Db, request: Request
 ):
@@ -163,7 +206,11 @@ def batch_approve(
     return BatchResponse(results=_service(db, principal, request).batch_approve(lesson_id, items))
 
 
-@router.post("/lessons/{lesson_id}/notifications/batch-mock-send", response_model=BatchResponse)
+@router.post(
+    "/lessons/{lesson_id}/notifications/batch-mock-send",
+    summary="반 단위 일괄 모의 발송",
+    response_model=BatchResponse,
+)
 def batch_mock_send(
     lesson_id: int, payload: BatchSendRequest, principal: Writer, db: Db, request: Request
 ):
@@ -185,7 +232,11 @@ def _key(value: str | None) -> UUID:
         ) from None
 
 
-@router.post("/notifications/{notification_id}/mock-send", response_model=MockSendResponse)
+@router.post(
+    "/notifications/{notification_id}/mock-send",
+    summary="모의 발송",
+    response_model=MockSendResponse,
+)
 def mock_send(
     notification_id: int,
     principal: Writer,
@@ -198,7 +249,11 @@ def mock_send(
     return MockSendResponse(notification=detail, attempt=attempt, replayed=replayed)
 
 
-@router.post("/notifications/{notification_id}/retry-mock-send", response_model=MockSendResponse)
+@router.post(
+    "/notifications/{notification_id}/retry-mock-send",
+    summary="실패한 모의 발송 재시도",
+    response_model=MockSendResponse,
+)
 def retry_mock_send(
     notification_id: int,
     principal: Writer,

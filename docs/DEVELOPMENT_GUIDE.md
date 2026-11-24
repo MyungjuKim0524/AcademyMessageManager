@@ -86,6 +86,13 @@ Remove-Item Env:ACADEMY_TEST_DB_PASSWORD
   .\.venv\Scripts\python.exe scripts\generate_erd.py           # docs/database/ERD.md 갱신
   .\.venv\Scripts\python.exe scripts\generate_erd.py --check   # 최신이 아니면 exit 1
   ```
+- API(라우트·요청·응답 모델)를 바꾼 뒤에는 API 명세를 다시 만든다.
+
+  ```powershell
+  cd backend
+  .\.venv\Scripts\python.exe scripts\generate_openapi.py           # docs/api/openapi.json·README.md 갱신
+  .\.venv\Scripts\python.exe scripts\generate_openapi.py --check   # 최신이 아니면 exit 1
+  ```
 - 첫 Migration `001`은 저장소 루트의 `sql/schema_postgresql.sql`을 읽는다. `007`은 `btree_gist` 확장을 만든다. 운영 DB 적용 시 주의점은 [배포 가이드](deployment/phase11_5_security_deployment_guide.md) 4절에 있다.
 
 ## 6. 개발 비용·외부 연동 정책

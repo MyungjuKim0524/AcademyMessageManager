@@ -62,7 +62,7 @@ def _set_cookies(response: Response, session_token: str, csrf_token: str, max_ag
     )
 
 
-@router.post("/login", response_model=AuthResponse)
+@router.post("/login", summary="로그인", response_model=AuthResponse)
 def login(
     payload: LoginRequest,
     request: Request,
@@ -94,7 +94,7 @@ def login(
     )
 
 
-@router.post("/password", response_model=PasswordChanged)
+@router.post("/password", summary="내 비밀번호 변경", response_model=PasswordChanged)
 def change_password(
     payload: PasswordChange,
     request: Request,
@@ -113,7 +113,9 @@ def change_password(
     return PasswordChanged(changed=True, other_sessions_revoked=revoked)
 
 
-@router.post("/password-reset", response_model=PasswordResetDone)
+@router.post(
+    "/password-reset", summary="재설정 코드로 비밀번호 재설정", response_model=PasswordResetDone
+)
 def complete_password_reset(
     payload: PasswordResetComplete,
     request: Request,
@@ -135,7 +137,7 @@ def complete_password_reset(
     return PasswordResetDone(reset=True)
 
 
-@router.post("/logout", response_model=LogoutResponse)
+@router.post("/logout", summary="로그아웃", response_model=LogoutResponse)
 def logout(
     request: Request,
     response: Response,
@@ -149,7 +151,11 @@ def logout(
     return LogoutResponse(loggedOut=True)
 
 
-@router.get("/client-address", response_model=ClientAddressDiagnosis)
+@router.get(
+    "/client-address",
+    summary="로그인 제한 기준 주소 진단(배포 점검용, 기본 꺼짐)",
+    response_model=ClientAddressDiagnosis,
+)
 def client_address_diagnosis(
     request: Request, _: Annotated[Principal, Depends(require_admin)]
 ) -> ClientAddressDiagnosis:
@@ -190,6 +196,6 @@ def client_address_diagnosis(
     )
 
 
-@router.get("/me", response_model=AuthResponse)
+@router.get("/me", summary="현재 로그인한 직원 정보", response_model=AuthResponse)
 def me(principal: Annotated[Principal, Depends(get_current_principal)]) -> AuthResponse:
     return AuthResponse(user=_staff(principal))

@@ -51,7 +51,7 @@ def _request_id(request: Request) -> str | None:
     return getattr(request.state, "request_id", None)
 
 
-@router.get("/classrooms", response_model=ClassroomPage)
+@router.get("/classrooms", summary="반 목록(선생님·조교는 담당 반만)", response_model=ClassroomPage)
 def list_classrooms(
     principal: Annotated[Principal, Depends(require_authenticated)],
     db: Annotated[Session, Depends(get_db)],
@@ -65,7 +65,7 @@ def list_classrooms(
     )
 
 
-@router.get("/staff", response_model=StaffPage)
+@router.get("/staff", summary="직원 목록", response_model=StaffPage)
 def list_staff(
     _: Annotated[Principal, Depends(require_admin)],
     db: Annotated[Session, Depends(get_db)],
@@ -78,7 +78,12 @@ def list_staff(
     )
 
 
-@router.post("/staff", response_model=StaffView, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/staff",
+    summary="직원 계정 생성",
+    response_model=StaffView,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_staff(
     payload: StaffCreate,
     principal: Annotated[Principal, Depends(require_admin_csrf)],
@@ -88,7 +93,7 @@ def create_staff(
     return LearningOpsService(db).create_staff(payload, principal, _request_id(request))
 
 
-@router.get("/staff/{staff_id}", response_model=StaffView)
+@router.get("/staff/{staff_id}", summary="직원 상세", response_model=StaffView)
 def get_staff(
     staff_id: int,
     _: Annotated[Principal, Depends(require_admin)],
@@ -97,7 +102,7 @@ def get_staff(
     return LearningOpsService(db).staff_detail(staff_id)
 
 
-@router.patch("/staff/{staff_id}", response_model=StaffView)
+@router.patch("/staff/{staff_id}", summary="직원 정보 수정", response_model=StaffView)
 def update_staff_profile(
     staff_id: int,
     payload: StaffProfileUpdate,
@@ -110,7 +115,7 @@ def update_staff_profile(
     )
 
 
-@router.patch("/staff/{staff_id}/status", response_model=StaffView)
+@router.patch("/staff/{staff_id}/status", summary="직원 활성·비활성 전환", response_model=StaffView)
 def update_staff_status(
     staff_id: int,
     payload: StaffStatusUpdate,
@@ -123,7 +128,11 @@ def update_staff_status(
     )
 
 
-@router.post("/staff/{staff_id}/password-reset-code", response_model=PasswordResetCodeIssued)
+@router.post(
+    "/staff/{staff_id}/password-reset-code",
+    summary="비밀번호 재설정 코드 발급",
+    response_model=PasswordResetCodeIssued,
+)
 def issue_password_reset_code(
     staff_id: int,
     principal: Annotated[Principal, Depends(require_admin_csrf)],
@@ -138,7 +147,11 @@ def issue_password_reset_code(
     return PasswordResetCodeIssued(staff_id=staff_id, code=code, expires_at=expires_at)
 
 
-@router.delete("/staff/{staff_id}", response_model=StaffDeletion)
+@router.delete(
+    "/staff/{staff_id}",
+    summary="직원 삭제(기록이 있으면 삭제 상태로 표시)",
+    response_model=StaffDeletion,
+)
 def delete_staff(
     staff_id: int,
     principal: Annotated[Principal, Depends(require_admin_csrf)],
@@ -152,7 +165,9 @@ def delete_staff(
     return StaffDeletion(staff_id=staff_id, mode=mode)
 
 
-@router.get("/staff/{staff_id}/assignments", response_model=AssignmentPage)
+@router.get(
+    "/staff/{staff_id}/assignments", summary="직원의 담당 반 목록", response_model=AssignmentPage
+)
 def list_staff_assignments(
     staff_id: int,
     principal: Annotated[Principal, Depends(require_authenticated)],
@@ -179,7 +194,11 @@ def list_staff_assignments(
     )
 
 
-@router.get("/classrooms/{classroom_id}/staff", response_model=ClassroomStaffAssignmentPage)
+@router.get(
+    "/classrooms/{classroom_id}/staff",
+    summary="반의 담당 직원 목록",
+    response_model=ClassroomStaffAssignmentPage,
+)
 def list_classroom_staff(
     classroom_id: int,
     _: Annotated[Principal, Depends(require_admin)],
@@ -210,6 +229,7 @@ def list_classroom_staff(
 
 @router.delete(
     "/classrooms/{classroom_id}/assignments/{assignment_id}",
+    summary="담당 반 배정 해제",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete_assignment(
@@ -225,7 +245,12 @@ def delete_assignment(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.post("/classrooms", response_model=ClassroomView, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/classrooms",
+    summary="반 등록",
+    response_model=ClassroomView,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_classroom(
     payload: ClassroomCreate,
     principal: Annotated[Principal, Depends(require_admin_csrf)],
@@ -235,7 +260,9 @@ def create_classroom(
     return LearningOpsService(db).create_classroom(payload, principal, _request_id(request))
 
 
-@router.patch("/classrooms/{classroom_id}", response_model=ClassroomView)
+@router.patch(
+    "/classrooms/{classroom_id}", summary="반 이름 변경·종료·재개", response_model=ClassroomView
+)
 def update_classroom(
     classroom_id: int,
     payload: ClassroomUpdate,
@@ -248,7 +275,11 @@ def update_classroom(
     return LearningOpsService(db).update_classroom(classroom_id, payload, principal, request_id)
 
 
-@router.delete("/classrooms/{classroom_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/classrooms/{classroom_id}",
+    summary="반 삭제(기록 없는 반만)",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
 def delete_classroom(
     classroom_id: int,
     principal: Annotated[Principal, Depends(require_admin_csrf)],
@@ -261,7 +292,7 @@ def delete_classroom(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.get("/students", response_model=StudentPage)
+@router.get("/students", summary="전체 학생 목록", response_model=StudentPage)
 def list_all_students(
     _: Annotated[Principal, Depends(require_admin)],
     db: Annotated[Session, Depends(get_db)],
@@ -300,7 +331,11 @@ def list_all_students(
     )
 
 
-@router.get("/students/{student_id}/contact", response_model=StudentContactView)
+@router.get(
+    "/students/{student_id}/contact",
+    summary="보호자 연락처 조회",
+    response_model=StudentContactView,
+)
 def get_student_contact(
     student_id: int,
     _: Annotated[Principal, Depends(require_admin)],
@@ -309,7 +344,11 @@ def get_student_contact(
     return LearningOpsService(db).student_contact(student_id)
 
 
-@router.patch("/students/{student_id}/contact", response_model=StudentContactView)
+@router.patch(
+    "/students/{student_id}/contact",
+    summary="보호자 연락처 수정",
+    response_model=StudentContactView,
+)
 def update_student_contact(
     student_id: int,
     payload: StudentContactUpdate,
@@ -321,7 +360,12 @@ def update_student_contact(
     return LearningOpsService(db).update_student_contact(student_id, payload, principal, request_id)
 
 
-@router.post("/students", response_model=StudentView, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/students",
+    summary="학생 등록",
+    response_model=StudentView,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_student(
     payload: StudentCreate,
     principal: Annotated[Principal, Depends(require_admin_csrf)],
@@ -333,6 +377,7 @@ def create_student(
 
 @router.post(
     "/classrooms/{classroom_id}/enrollments",
+    summary="수강 등록",
     response_model=EnrollmentView,
     status_code=status.HTTP_201_CREATED,
 )
@@ -348,6 +393,7 @@ def create_enrollment(
 
 @router.post(
     "/classrooms/{classroom_id}/assignments",
+    summary="담당 반 배정",
     response_model=AssignmentView,
     status_code=status.HTTP_201_CREATED,
 )
@@ -363,6 +409,7 @@ def create_assignment(
 
 @router.get(
     "/classrooms/{classroom_id}/students",
+    summary="반별 학생 목록",
     response_model=ClassroomStudentPage,
     # Guardian fields are only *set* for administrators, so for everyone else the keys are
     # absent from the response entirely (not just null).

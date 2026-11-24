@@ -377,7 +377,7 @@ Java 경로(Swing / Java HttpServer → service → port → JDBC → PostgreSQL
 - 빈 PostgreSQL 17 일회용 DB에서 001→011 전체 재구성 검증 완료(2026-11-23, Phase 11-5-B). `011_staff_deleted_status` head, `btree_gist`, FK·UNIQUE·CHECK·Trigger와 Seed 멱등성·부분 복구를 확인했다.
 - 개발 DB 불변조건 점검: 미실행(사용자 보류). revision은 2026-11-21에 확인했다.
 - Phase 11 업무 시나리오 수동 점검표(`docs/archive/phases/phase11-manual-scenario-checklist.md`): 실행 결과는 이 문서에서 확인하지 않았다.
-- API 계약 문서(10.5 M5): Java 시절 문서 3개(`docs/api/openapi.yaml`, `docs/api/HTTP_API_SECURITY.md`, `docs/archive/java-v1/IMPORT_CONFIRM.md`)에 "이전 기록" 표시를 붙였다(2026-11-24). 현재 API 명세는 FastAPI `/openapi.json`(`ACADEMY_API_DOCS=1`)이다. 저장소에 둘 OpenAPI 명세 재생성은 하지 않았고, 레거시 미리보기 API 유지 여부(M4) 결정 뒤로 미룬다.
+- API 계약 문서(10.5 M5): Java 시절 문서 3개(`docs/api/openapi-java-v1-legacy.yaml`(옛 `openapi.yaml`), `docs/api/HTTP_API_SECURITY.md`, `docs/archive/java-v1/IMPORT_CONFIRM.md`)에 "이전 기록" 표시를 붙였다(2026-11-24). 현재 API 명세는 `backend/scripts/generate_openapi.py`가 FastAPI 앱에서 생성하는 `docs/api/openapi.json`과 엔드포인트 요약 `docs/api/README.md`다(2026-11-25, 82개). 레거시 미리보기 API(`/api/messages/preview`) 유지 여부(M4)는 아직 결정하지 않았다.
 
 ### 미완료
 

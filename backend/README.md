@@ -59,6 +59,13 @@ pytest
 .\.venv\Scripts\python.exe scripts\generate_erd.py --check   # 최신이 아니면 exit 1
 ```
 
+API 명세([`../docs/api/README.md`](../docs/api/README.md), `openapi.json`)도 앱에서 자동 생성한다. 라우트·요청·응답 모델을 바꾼 뒤 다시 만든다(DB 연결 불필요).
+
+```powershell
+.\.venv\Scripts\python.exe scripts\generate_openapi.py           # docs/api/ 다시 생성
+.\.venv\Scripts\python.exe scripts\generate_openapi.py --check   # 최신이 아니면 exit 1
+```
+
 Compose는 서로 다른 계정·포트·volume을 사용하는 두 서비스를 실행합니다.
 
 - 개발: `academy_learningops_dev`, `academy_dev`, `127.0.0.1:55431`

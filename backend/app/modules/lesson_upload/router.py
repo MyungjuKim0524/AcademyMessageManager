@@ -38,7 +38,7 @@ def _service(db: Session, principal: Principal, request: Request):
 Sheets = Annotated[list[str] | None, Form()]
 
 
-@router.post("/sheets", response_model=SheetList)
+@router.post("/sheets", summary="엑셀 파일의 시트(시간대) 목록", response_model=SheetList)
 async def list_sheets(
     principal: Annotated[Principal, Depends(require_authenticated)],
     file: Annotated[UploadFile, File()],
@@ -48,7 +48,7 @@ async def list_sheets(
     return SheetList(sheets=LessonUploadService.sheet_summaries(blocks))
 
 
-@router.post("/preview", response_model=UploadPreview)
+@router.post("/preview", summary="업로드 미리보기(저장 안 함)", response_model=UploadPreview)
 async def preview_upload(
     request: Request,
     principal: Annotated[Principal, Depends(require_authenticated)],
@@ -73,7 +73,7 @@ async def preview_upload(
     )
 
 
-@router.post("/confirm", response_model=UploadResult)
+@router.post("/confirm", summary="업로드 확정·저장", response_model=UploadResult)
 async def confirm_upload(
     request: Request,
     principal: Annotated[Principal, Depends(require_csrf)],

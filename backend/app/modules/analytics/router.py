@@ -34,12 +34,18 @@ From = Annotated[date, Query()]
 To = Annotated[date, Query()]
 
 
-@router.get("/attendance", response_model=AttendanceAnalytics)
+@router.get(
+    "/attendance", summary="출결 분석(입력 완료율·출석률)", response_model=AttendanceAnalytics
+)
 def attendance(principal: Reader, db: Db, classroom_id: ClassroomId, date_from: From, date_to: To):
     return AnalyticsService(db, principal).attendance(classroom_id, date_from, date_to)
 
 
-@router.get("/attendance/students/{student_id}", response_model=StudentAttendanceHistory)
+@router.get(
+    "/attendance/students/{student_id}",
+    summary="학생별 출결 이력",
+    response_model=StudentAttendanceHistory,
+)
 def student_attendance(
     student_id: int,
     principal: Reader,
@@ -53,17 +59,23 @@ def student_attendance(
     )
 
 
-@router.get("/grades", response_model=GradeAnalytics)
+@router.get("/grades", summary="성적 분석", response_model=GradeAnalytics)
 def grades(principal: Reader, db: Db, classroom_id: ClassroomId, date_from: From, date_to: To):
     return AnalyticsService(db, principal).grades(classroom_id, date_from, date_to)
 
 
-@router.get("/grades/assessments/{assessment_id}", response_model=AssessmentDetail)
+@router.get(
+    "/grades/assessments/{assessment_id}",
+    summary="평가별 성적 상세",
+    response_model=AssessmentDetail,
+)
 def assessment_detail(assessment_id: int, principal: Reader, db: Db):
     return AnalyticsService(db, principal).assessment_detail(assessment_id)
 
 
-@router.get("/grades/students/{student_id}", response_model=StudentGradeTrend)
+@router.get(
+    "/grades/students/{student_id}", summary="학생별 성적 추이", response_model=StudentGradeTrend
+)
 def student_grades(
     student_id: int,
     principal: Reader,
@@ -77,13 +89,15 @@ def student_grades(
     )
 
 
-@router.get("/watchlist", response_model=Watchlist)
+@router.get("/watchlist", summary="관심 필요 학생", response_model=Watchlist)
 def watchlist(principal: Reader, db: Db, classroom_id: ClassroomId):
     """관심 필요 학생 of the last 4 weeks, each with the reasons (rules in the response)."""
     return AnalyticsService(db, principal).watchlist(classroom_id)
 
 
-@router.get("/students/{student_id}/report", response_model=StudentReport)
+@router.get(
+    "/students/{student_id}/report", summary="학생 학습 리포트", response_model=StudentReport
+)
 def student_report(
     student_id: int,
     principal: Reader,

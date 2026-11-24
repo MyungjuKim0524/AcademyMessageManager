@@ -1,9 +1,7 @@
 # (2026-11-24) 이전 기록: Java v1.x 로컬 HTTP 어댑터(서버 8080) 시점의 API 계약이다.
 # - 여기 적힌 /api/imports* 5개 경로는 Phase 9.6에서 삭제되었다(Alembic 010_drop_legacy_import_tables).
 # - 현재 FastAPI 웹 API(v2.0.0)의 라우트 대부분은 이 파일에 없다.
-# 현재 API 명세는 FastAPI가 코드에서 생성하는 /openapi.json을 본다.
-# (ACADEMY_API_DOCS=1일 때만 열리며, scripts/start-fastapi.ps1이 로컬 실행 시 켠다.)
-# 저장소용 명세 재생성은 아직 하지 않았다(docs/DEVELOPMENT_HISTORY.md 7절).
+# 현재 API 명세는 docs/api/openapi.json·docs/api/README.md를 본다(backend/scripts/generate_openapi.py가 코드에서 생성).
 openapi: 3.1.0
 info:
   title: Academy Message Manager Local API

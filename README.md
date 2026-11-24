@@ -63,6 +63,7 @@ PostgreSQL 17 (FK·CHECK·UNIQUE·EXCLUDE 제약, Alembic Migration 001~011)
 - 백엔드 모듈: `auth`, `learningops`, `academics`, `lesson_upload`, `notifications`, `message_operations`, `analytics`
 - 동시성: 행 잠금과 버전 검사, 멱등 키, 메시지당 발송 성공 1회 제약, 엑셀 확정의 반별 잠금
 - 데이터베이스 구조: [ERD](docs/database/ERD.md)(테이블 20개, 코드에서 자동 생성)
+- API 명세: [API 요약](docs/api/README.md)(엔드포인트 82개, 권한·CSRF 표시) · [openapi.json](docs/api/openapi.json)(코드에서 자동 생성)
 
 ## 기술 스택
 
@@ -152,6 +153,7 @@ DB 컨테이너 준비, 환경변수, 데이터 위치 정책 등 자세한 절�
 | [Development History](docs/DEVELOPMENT_HISTORY.md) | Java v1.0 → 웹 v2.0.0 개발 이력, 개선 항목별 근거, 현재 상태·로드맵 |
 | [Engineering Retrospective](docs/ENGINEERING_RETROSPECTIVE.md) | 기술 결정과 회고(FastAPI 선택 이유, 기능 이식 누락 등) |
 | [개발 가이드](docs/DEVELOPMENT_GUIDE.md) | 로컬 환경·테스트·스키마 변경·개발 정책 |
+| [API 명세](docs/api/README.md) | 현재 API 엔드포인트·권한 요약과 OpenAPI 명세(자동 생성) |
 | [ERD](docs/database/ERD.md) | 현재 데이터베이스 구조(자동 생성) |
 | [분석 지표 정의](docs/analytics/phase10-metric-definitions.md) | 출석률·출결 입력 완료율·성적 입력 완료율 등 분석 산식 |
 | [backend/README](backend/README.md) · [frontend/README](frontend/README.md) | 백엔드·프론트엔드 세부 안내 |

@@ -43,7 +43,7 @@ logging.basicConfig(
 docs = settings.api_docs_enabled
 app = FastAPI(
     title="Academy LearningOps API",
-    version="0.1.0",
+    version="2.0.0",
     docs_url="/docs" if docs else None,
     redoc_url="/redoc" if docs else None,
     openapi_url="/openapi.json" if docs else None,
@@ -98,12 +98,20 @@ async def internal_error_handler(request: Request, exc: Exception):
     return error_response(status, code, message)
 
 
-@app.get("/api/health", response_model=HealthResponse)
+@app.get(
+    "/api/health",
+    summary="서버 상태 확인",
+    response_model=HealthResponse,
+)
 async def health() -> HealthResponse:
     return HealthResponse(status="UP")
 
 
-@app.post("/api/messages/preview", response_model=MessagePreviewResponse)
+@app.post(
+    "/api/messages/preview",
+    summary="메시지 문구 미리보기(Java 시절 계약 호환)",
+    response_model=MessagePreviewResponse,
+)
 async def preview_message(
     payload: MessagePreviewRequest,
     principal: Annotated[Principal, Depends(require_authenticated)],
