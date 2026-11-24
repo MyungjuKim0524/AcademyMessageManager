@@ -22,7 +22,7 @@ Java/Python 실제 서버에 공통 fixture 7건을 전송한 결과 상태 코�
 | 문서 | 결과 |
 |---|---|
 | `docs/academy-learningops-assessment.md` | `D:\refactor` 아래에서 찾지 못함 |
-| `docs/fastapi-transition-baseline.md` | 확인 및 반영 |
+| `docs/archive/phases/fastapi-transition-baseline.md` | 확인 및 반영 |
 | `docs/api/openapi.yaml` | 확인 및 반영 |
 
 누락된 assessment의 내용을 추정하지 않고 baseline, OpenAPI, 실제 Java 소스를 기준으로 구현했다.

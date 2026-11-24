@@ -1,6 +1,6 @@
 # Phase 10 — 통계 지표 정의 (Stage 2)
 
-작성일: 2026-11-20 · 근거: 실제 스키마·서비스 규칙(`docs/phase10-implementation-plan.md` 1절)
+작성일: 2026-11-20 · 근거: 실제 스키마·서비스 규칙(`docs/archive/phases/phase10-implementation-plan.md` 1절)
 
 ## 0. 공통 정의
 - **진행된 수업(held lesson)**: `lesson.status <> 'CANCELLED'` AND `lesson_date <= 오늘` AND (`status = 'COMPLETED'` OR 그 수업에 `lesson_result` 1건 이상). 메시지 처리 현황(`message_operations`)과 **같은 정의**.

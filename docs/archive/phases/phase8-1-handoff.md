@@ -17,7 +17,7 @@
 
 ## 1. 지금까지 완료된 것 (요약)
 
-- Phase 6B~8 완료. 문서: `docs/phase7-lessons-attendance-grades.md`, `docs/phase7-1-stabilization.md`, `docs/phase8-parent-notification-workflow.md`, `docs/phase8-progress.md`.
+- Phase 6B~8 완료. 문서: `docs/archive/phases/phase7-lessons-attendance-grades.md`, `docs/archive/phases/phase7-1-stabilization.md`, `docs/archive/phases/phase8-parent-notification-workflow.md`, `docs/archive/phases/phase8-progress.md`.
 - 개발 DB는 **Migration 008**까지 적용됨. 테스트 DB는 **009**까지 적용됨.
 - Phase 8 정책(사용자 결정): 조교(ASSISTANT)가 내용 확정(=승인, API `approve`)·모의 발송까지 직접 한다. 화면 용어 "승인" → "내용 확정". 보호자 이메일: 관리자 학생 목록에 표시, 메시지 상세는 전체 주소, 목록은 마스킹, 선생님·조교 학생 목록 응답에는 키 자체 없음.
 
@@ -76,7 +76,7 @@
    ```
    마지막 전체 실행(기본 지정 기능 전): **97 PASS**. 이후 +1(기본 지정 테스트) 예상.
 3. **Java 회귀** (테스트 DB 009): `$env:JAVA_HOME="$env:USERPROFILE\.jdks\openjdk-26.0.2"`(cmd에서는 `%USERPROFILE%\.jdks\openjdk-26.0.2`), `DB_URL=jdbc:postgresql://127.0.0.1:55432/academy_learningops_test`, `DB_USER=academy_test`, `DB_PASSWORD`(위와 같은 방식) 설정 후 `mvn -q -DrunPostgresIntegration=true test`, 결과는 `target\surefire-reports\TEST-*.xml` 합산. 마지막 결과 48 PASS(008 기준).
-4. **보고서 작성**: `docs/phase8-1-excel-upload.md`(구현·규칙·API·DB·테스트 실제 결과·남은 제약) + `docs/phase8-progress.md` 갱신. 화면 용어·정책 변경 근거 포함.
+4. **보고서 작성**: `docs/archive/phases/phase8-1-excel-upload.md`(구현·규칙·API·DB·테스트 실제 결과·남은 제약) + `docs/archive/phases/phase8-progress.md` 갱신. 화면 용어·정책 변경 근거 포함.
 5. **개발 DB Migration 009 승인 요청** → 승인 시: 컨테이너 식별(라벨 `isolated-development`), `alembic upgrade 008:009 --sql`로 SQL 검사, `pg_dump -Fc`로 `.dev-data\backups\` 백업 + `pg_restore --list` 검증, `cmd /c`로 `alembic upgrade`(PowerShell은 Alembic INFO를 오류로 처리해 명령이 끊김), 읽기 전용 사후 검증(행 수·md5 지문 비교).
 6. **서버 재기동 후 사용자 브라우저 확인**: `scripts\start-fastapi.ps1`(시작 시 DB가 Alembic head인지 검사), `scripts\start-frontend.ps1`. 에이전트 백그라운드 실행은 2시간 제한이 있어 사용자가 직접 터미널에서 띄우는 것을 권장. 확인 순서: 반 등록·학생 보호자 이메일 → 엑셀 업로드(가상 학생으로 만든 파일) → 미등록 학생 질문 흐름 → 확정 → 검토·발송에서 내용 확정·모의 발송.
 

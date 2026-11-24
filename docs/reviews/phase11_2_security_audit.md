@@ -3,7 +3,7 @@
 작업일: 2026-11-20 · 범위: FastAPI 백엔드(`backend/app`), React 프론트엔드(`frontend/src`) 인증·API 계층, 설정·스크립트
 방식: 라우트 전수 목록(의존성 자동 추출) → 고위험 경로 코드 추적 → 기존 보안 테스트 실행 → 의심 경로 1건은 격리 테스트 DB에서 재현
 **소스코드·DB 스키마·설정은 수정하지 않았다.** 산출물은 이 문서 1개다. 재현 스크립트는 저장소 밖(scratchpad)에 있다.
-참고 문서: `phase10_5_architecture_review.md`, `phase10_5_improvement_plan.md`, `phase10_5_c1/c2_results.md`, Phase 11 변경 문서(`docs/phase11-*.md`). Phase 11-1 테스트 결과 문서는 따로 없다.
+참고 문서: `phase10_5_architecture_review.md`, `phase10_5_improvement_plan.md`, `phase10_5_c1/c2_results.md`, Phase 11 변경 문서(`docs/archive/phases/phase11-*.md`). Phase 11-1 테스트 결과 문서는 따로 없다.
 
 ---
 

@@ -1,6 +1,6 @@
 # Phase 9.5 — 업무 중심 UI/UX 개선 + 아키텍처 품질 점검 최종 보고서
 
-작성일: 2026-11-20 · 진단: `docs/phase9-5-assessment.md` · 진행: `docs/phase9-5-progress.md` · 수동 점검: `docs/phase9-5-manual-ui-checklist.md`
+작성일: 2026-11-20 · 진단: `docs/archive/phases/phase9-5-assessment.md` · 진행: `docs/archive/phases/phase9-5-progress.md` · 수동 점검: `docs/archive/phases/phase9-5-manual-ui-checklist.md`
 
 ## 1. 목표 및 범위
 기존 기능을 보존하면서 업무 흐름을 연결하고(엑셀 반영 → 메시지 검토 → 처리 현황), 화면 일관성을 맞추고, 아키텍처를 근거 기반으로 점검했습니다. **백엔드 코드·API·DB 변경 없음**(프론트엔드만 변경).
@@ -105,7 +105,7 @@ Phase 8.1의 출결 기본 탭·"저장 안 됨" 표시·미입력≠결석·행
 기존 테스트 삭제·기대값 완화 없음. 기존 업로드 테스트에는 단계 요약 기대값을 **추가**만 함. pytest·Java·Vitest 전체 통과(15절).
 
 ## 17. 브라우저 E2E 상태
-**NOT RUN** — 이 환경에 브라우저 자동화 도구가 없음. 절차는 `docs/phase9-5-manual-ui-checklist.md`(18항목, 결과 칸 NOT RUN).
+**NOT RUN** — 이 환경에 브라우저 자동화 도구가 없음. 절차는 `docs/archive/phases/phase9-5-manual-ui-checklist.md`(18항목, 결과 칸 NOT RUN).
 
 ## 18. 보류·제외한 개선사항
 | 항목 | 이유 | 권장 단계 |

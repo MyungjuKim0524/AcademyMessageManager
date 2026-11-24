@@ -1,6 +1,6 @@
 """Read-only analytics: authorisation, period rules and the rate formulas.
 
-Formulas (docs/phase10-metric-definitions.md):
+Formulas (docs/analytics/phase10-metric-definitions.md):
 * record_rate     = recorded / target
 * attendance_rate = (present + late) / (recorded - excused)   — user decision 2026-11-20:
   late counts as attended, excused absences are left out; unrecorded is never an absence.

@@ -1,6 +1,6 @@
 # Phase 9 구현 계획 — 메시지 운영 현황·누락 탐지·실패 관리·안전한 수동 재시도
 
-작성일: 2026-11-20 · 진행: `docs/phase9-progress.md` · 최종 보고: `docs/phase9-message-operations.md`
+작성일: 2026-11-20 · 진행: `docs/archive/phases/phase9-progress.md` · 최종 보고: `docs/archive/phases/phase9-message-operations.md`
 출발점: Phase 8/8.1 완료(브라우저 확인 포함). DB head `009_phase81_lesson_upload`(개발·테스트 DB 모두, 2026-11-20 읽기 전용 확인).
 
 ## 1. 기존 Phase 8 재사용 구조 (조사 결과)

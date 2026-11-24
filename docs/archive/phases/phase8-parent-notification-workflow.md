@@ -1,6 +1,6 @@
 # Phase 8 — 학부모 안내 메시지 생성·검토·승인·모의 발송 최종 보고서
 
-작성일: 2026-11-18 · 설계: `docs/phase8-implementation-plan.md` · 진행: `docs/phase8-progress.md`
+작성일: 2026-11-18 · 설계: `docs/archive/phases/phase8-implementation-plan.md` · 진행: `docs/archive/phases/phase8-progress.md`
 
 ## 1. 목표 및 구현 범위
 

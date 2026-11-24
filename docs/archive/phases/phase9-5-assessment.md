@@ -1,9 +1,9 @@
 # Phase 9.5 개선 전 진단 (Stage 1)
 
-작성일: 2026-11-20 · 진행: `docs/phase9-5-progress.md` · 최종: `docs/phase9-5-ux-architecture-improvement.md`
+작성일: 2026-11-20 · 진행: `docs/archive/phases/phase9-5-progress.md` · 최종: `docs/archive/phases/phase9-5-ux-architecture-improvement.md`
 
 ## 0. 출발점 확인
-- Phase 9 구현 확인: `app/modules/message_operations/*`, `POST /api/notifications/{id}/retry-mock-send`, `features/message-operations/*` 존재. 직전 자동 테스트: pytest 109, Java 48, Vitest 54 PASS(2026-11-20, `docs/phase9-message-operations.md` 15절). DB head `009_phase81_lesson_upload`(개발·테스트).
+- Phase 9 구현 확인: `app/modules/message_operations/*`, `POST /api/notifications/{id}/retry-mock-send`, `features/message-operations/*` 존재. 직전 자동 테스트: pytest 109, Java 48, Vitest 54 PASS(2026-11-20, `docs/archive/phases/phase9-message-operations.md` 15절). DB head `009_phase81_lesson_upload`(개발·테스트).
 - 실제 업무 흐름의 엑셀 반영은 **성적 안내 > 엑셀 업로드**(`UploadTab.tsx`, `/api/lesson-uploads/preview|confirm`)입니다. 구 CSV/XLSX 가져오기(`/imports/preview`, `ImportPreviewPage.tsx`)는 Phase 8.1에서 메뉴에서 숨겼고 Java 호환을 위해 라우트·API만 유지 중입니다.
 - AI Secretary Pro: `D:\AI-Secretary-Pro-20260708T100428Z-3-001\AI-Secretary-Pro`에 실제 존재(Streamlit + LangChain 단일 앱, 파이썬 22개 파일). 비교는 §3.
 

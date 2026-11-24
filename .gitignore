@@ -1,4 +1,4 @@
-# Java legacy app: not published (docs/phase10-learning-analytics.md, phase11_2_security_audit.md).
+# Java legacy app: not published (docs/archive/phases/phase10-learning-analytics.md, phase11_2_security_audit.md).
 # Root-anchored so frontend/src/ stays. Keep sql/ (Alembic 001 reads sql/schema_postgresql.sql)
 # and tests/fixtures/ (Python contract tests).
 /src/

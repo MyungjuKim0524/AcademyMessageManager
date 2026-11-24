@@ -2,7 +2,7 @@
 
 | 항목 | 내용 |
 |---|---|
-| 완료 Stage | 1~7 (자동화 검증 완료, 최종 보고서 `docs/phase7-lessons-attendance-grades.md`) |
+| 완료 Stage | 1~7 (자동화 검증 완료, 최종 보고서 `docs/archive/phases/phase7-lessons-attendance-grades.md`) |
 | 마지막 주요 파일 | `backend/app/modules/academics/repository.py`(평가 목록 집계를 상관 서브쿼리로 변경), `frontend/src/features/classwork/*` |
 | 마지막 테스트 | 2026-11-18: pytest 64 PASS, Ruff PASS, `alembic check` 차이 없음, Java 47 PASS/0 skip, Vitest 10 files 31 PASS, oxlint PASS, tsc+build PASS — 모두 테스트 DB(006) |
 | 진행 중 | 없음 |

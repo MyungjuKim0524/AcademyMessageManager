@@ -164,7 +164,7 @@ event_type: `LESSON_CREATED/UPDATED`, `ATTENDANCE_RECORDED/UPDATED`, `ASSESSMENT
 ## 7. 변경 파일 (예상)
 
 - 신규: `alembic/versions/006_phase7_lessons_grades.py`, `app/modules/academics/{__init__,router,service,repository,schemas}.py`,
-  `tests/test_phase7_academics_integration.py`, `frontend/src/features/classwork/*`, `docs/phase7-*.md`
+  `tests/test_phase7_academics_integration.py`, `frontend/src/features/classwork/*`, `docs/archive/phases/phase7-*.md`
 - 수정: `app/db/models/tables.py`, `app/db/schema.py`(EXPECTED_TABLES), `app/main.py`(router 등록),
   `tests/test_postgres_integration.py`(revision·테이블·트리거 기대값), `frontend/src/app/router.tsx`, `frontend/src/layout/AppLayout.tsx`
 
@@ -199,5 +199,5 @@ Stage 2 Migration·모델 → 테스트 DB 적용·제약 테스트 → Stage 3 
 
 - 테스트 DB에 006 적용, 위 자동 테스트 전부 PASS, Java 47개 회귀 PASS
 - React 화면에서 수업·출결·성적 기록 흐름 동작(단위 테스트), lint·build PASS
-- 최종 보고서 `docs/phase7-lessons-attendance-grades.md` 작성
+- 최종 보고서 `docs/archive/phases/phase7-lessons-attendance-grades.md` 작성
 - 개발 DB 적용과 브라우저 확인은 승인 대기로 명확히 구분

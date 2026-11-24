@@ -101,7 +101,7 @@ backend/            FastAPI 앱(app/), Alembic Migration(alembic/), 테스트(te
 frontend/           React 앱(src/)
 sql/                기준 스키마(schema_postgresql.sql, Migration 001이 읽음), 시드·검증 SQL
 tests/fixtures/     메시지 미리보기 계약 fixture(Python 테스트가 사용)
-docs/               개발 이력·가이드·ERD·리뷰·배포 문서
+docs/               개발 이력·가이드, API·ERD, 리뷰·배포·트러블슈팅, 단계별 작업 기록(archive/)
 scripts/            로컬 실행·검증 PowerShell 스크립트
 data/               가상 샘플 데이터
 ```
@@ -152,9 +152,12 @@ DB 컨테이너 준비, 환경변수, 데이터 위치 정책 등 자세한 절�
 | [Development History](docs/DEVELOPMENT_HISTORY.md) | Java v1.0 → 웹 v2.0.0 개발 이력, 개선 항목별 근거, 현재 상태·로드맵 |
 | [Engineering Retrospective](docs/ENGINEERING_RETROSPECTIVE.md) | 기술 결정과 회고(FastAPI 선택 이유, 기능 이식 누락 등) |
 | [개발 가이드](docs/DEVELOPMENT_GUIDE.md) | 로컬 환경·테스트·스키마 변경·개발 정책 |
-| [ERD](docs/database/ERD.md) | 현재 데이터베이스 구조 |
+| [ERD](docs/database/ERD.md) | 현재 데이터베이스 구조(자동 생성) |
+| [분석 지표 정의](docs/analytics/phase10-metric-definitions.md) | 출석률·출결 입력 완료율·성적 입력 완료율 등 분석 산식 |
 | [backend/README](backend/README.md) · [frontend/README](frontend/README.md) | 백엔드·프론트엔드 세부 안내 |
 | [docs/reviews/](docs/reviews/) | 보안·정합성·성능·릴리스 점검 결과 |
+| [docs/troubleshooting/](docs/troubleshooting/README.md) | 장애 원인 분석과 해결 기록(인증 초기 화면 500 오류, Docker Desktop 복구) |
+| [docs/archive/](docs/archive/README.md) | 단계별(Phase 1~11) 계획·진행 기록, Java 시절 문서 |
 
 ## 향후 계획
 

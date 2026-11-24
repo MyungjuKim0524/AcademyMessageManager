@@ -322,7 +322,7 @@ def test_held_lessons_are_the_same_set_in_message_operations_and_analytics(data:
     """B-2: 메시지 처리 현황 and 출결 분석 share one "held lesson" rule
     (academics.repository.held_lesson). Same data → same lesson sets; only the student-level
     target differs, by design (an attendance row outside eligibility is an obligation in
-    operations but an "outside record" in analytics — docs/phase10-metric-definitions.md §0)."""
+    operations but an "outside record" in analytics — docs/analytics/phase10-metric-definitions.md §0)."""
     L = data["L"]
     client = login("teacher")
     period = {"date_from": "2026-10-01", "date_to": "2027-01-01"}  # within the 93-day limit

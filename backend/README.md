@@ -152,5 +152,5 @@ Remove-Item Env:ACADEMY_BOOTSTRAP_ADMIN
 공개·다중 worker 용도가 아니다.
 
 비용 정책과 전체 보안 검증 결과는
-[`docs/phase5-auth-rbac-implementation.md`](../docs/phase5-auth-rbac-implementation.md)를 참고한다.
+[`docs/archive/phases/phase5-auth-rbac-implementation.md`](../docs/archive/phases/phase5-auth-rbac-implementation.md)를 참고한다.
 

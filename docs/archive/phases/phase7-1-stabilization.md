@@ -1,6 +1,6 @@
 # Phase 7.1 — 안정화: 같은 날 복수 회차 · 휴원 기준일 판정 · 인정결석
 
-작성일: 2026-11-18 · 선행 문서: `docs/phase7-lessons-attendance-grades.md`
+작성일: 2026-11-18 · 선행 문서: `docs/archive/phases/phase7-lessons-attendance-grades.md`
 
 범위 조정(사용자 지시): Git 설치·PATH 변경·`git init`·GitHub 업로드는 수행하지 않았다.
 변경 확인은 수정 시각이 아니라 **파일 내용 검색**으로 했다(§7).

@@ -38,7 +38,7 @@ React(Vite, antd) ── axios(쿠키 세션 + X-CSRF-Token) ──▶ FastAPI
 | `analytics` | 출결·성적 통계(읽기 전용) | service ~260, repository ~260 |
 | 최상위 `app/domain.py`, `app/models.py`, `main.py`의 `/api/messages/preview` | **Java 호환 시절 레거시** | domain 215 |
 
-문서와 코드의 일치: Phase 8~10 문서(`docs/phase*-*.md`)는 코드와 잘 맞는다. **불일치**: `docs/api/openapi.yaml`은 Java 서버(8080) 계약이고 FastAPI 경로를 담지 않는다. 루트 `README.md` 상단 설명도 Java/Swing 중심이다(M5).
+문서와 코드의 일치: Phase 8~10 문서(`docs/archive/phases/phase*-*.md`)는 코드와 잘 맞는다. **불일치**: `docs/api/openapi.yaml`은 Java 서버(8080) 계약이고 FastAPI 경로를 담지 않는다. 루트 `README.md` 상단 설명도 Java/Swing 중심이다(M5).
 
 ## 3. 계층 및 모듈 의존성 분석
 

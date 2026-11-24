@@ -1,6 +1,6 @@
 # Phase 9.6 — UI/UX 구조 개선 및 업무 동선 최적화: Phase 0 분석·계획
 
-작성일: 2026-11-20 · 선행: `docs/phase9-5-ux-architecture-improvement.md`(같은 날 완료된 1차 UX 개선)
+작성일: 2026-11-20 · 선행: `docs/archive/phases/phase9-5-ux-architecture-improvement.md`(같은 날 완료된 1차 UX 개선)
 
 ## 0. 작업 환경 사실
 - **Git 미설치·미초기화** → 변경 전 `frontend/src` 전체를 스크래치패드(`D:\Temp\…\scratchpad\backup-src-before`)에 백업. 원격 push·배포 없음.

@@ -75,7 +75,7 @@ Phase 8에서 새 템플릿 엔진의 `{예습메시지}`·`{주간메시지}`�
 | `backend/app/modules/message_operations/repository.py` | `recorded_lessons()`(출결 있는 수업 id) → `held_lessons(ids, today)`(공용 `held_lesson` 식으로 진행된 수업 id). 쿼리 수 동일(1회) |
 | `backend/app/modules/message_operations/service.py` | `items()`: `today`를 한 번만 계산해 조회 끝·판정에 같이 사용, `held = lesson.id in held_ids`. 취소·미진행·대상 아님 분류 로직은 그대로 |
 | `backend/tests/test_phase10_analytics_integration.py` | 신규 1건 `test_held_lessons_are_the_same_set_in_message_operations_and_analytics` |
-| `docs/phase10-5-progress.md` | B-2·M4 상태 행 |
+| `docs/archive/phases/phase10-5-progress.md` | B-2·M4 상태 행 |
 
 API 경로·요청·응답, DB 스키마, 프론트엔드, Java: **변경 없음**. C-1 변경(`notifications/service.py`, 프론트 2파일)과 H2·M2·M1 관련 코드: 손대지 않음.
 

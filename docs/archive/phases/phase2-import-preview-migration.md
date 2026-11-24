@@ -11,7 +11,7 @@ React, DB 스키마는 변경하지 않았다. Java와 Python 서버에 동일�
 비교 27개 시나리오는 모두 상태 코드와 JSON 본문이 일치했다.
 
 `docs/academy-learningops-assessment.md`는 작업 디렉터리에서 찾을 수 없어 이번 단계의
-근거로 사용할 수 없었다. 대신 `docs/fastapi-transition-baseline.md`,
+근거로 사용할 수 없었다. 대신 `docs/archive/phases/fastapi-transition-baseline.md`,
 `docs/api/openapi.yaml`, Java 구현·테스트와 Phase 1 결과를 확인했다.
 
 ## 2. 기존 Java 동작 분석

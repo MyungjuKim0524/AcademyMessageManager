@@ -6,7 +6,7 @@
 
 | 항목 | 확인 결과 |
 |---|---|
-| Phase 7.1 | `docs/phase7-1-stabilization.md` 판정 **완료**, Migration `007_phase71_sessions_pauses` 테스트 DB·개발 DB 모두 head |
+| Phase 7.1 | `docs/archive/phases/phase7-1-stabilization.md` 판정 **완료**, Migration `007_phase71_sessions_pauses` 테스트 DB·개발 DB 모두 head |
 | 기존 메시지 데이터(개발 DB) | `message_template` 0, `message_draft` 0, `delivery_job` 0 |
 | Git | CLI 없음 — 사용자 지시대로 설치·초기화하지 않음 |
 

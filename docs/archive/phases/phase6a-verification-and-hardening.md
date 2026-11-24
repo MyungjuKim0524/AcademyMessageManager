@@ -101,7 +101,7 @@ Starlette TestClient의 `httpx` 사용 deprecation warning도 남아 있으나 �
 - `backend/tests/test_postgres_integration.py`: schema reproducibility 테스트의 예상 Alembic
   revision을 오래된 `002_staff_auth_rbac`에서 실제 head인
   `003_phase6a_enrollment_integrity`로 변경했다. 제품 코드나 API 계약은 변경하지 않았다.
-- `docs/phase6a-verification-and-hardening.md`: 실제 검증 결과를 추가했다.
+- `docs/archive/phases/phase6a-verification-and-hardening.md`: 실제 검증 결과를 추가했다.
 
 Git 실행 파일이 PATH 및 확인한 표준 경로에 없어 `git status`는 BLOCKED였다. 따라서 기존 파일을
 전면 덮어쓰지 않고 위 두 파일만 최소 수정했다.
@@ -273,7 +273,7 @@ BLOCKED다. 자동 테스트 PASS를 업무 E2E 성공으로 표현하지 않는
 ## 9. 수정 파일
 
 - `scripts/use-d-drive-dev-env.ps1`: 올바른 pytest D드라이브 cache 옵션
-- `docs/phase6a-verification-and-hardening.md`: 본 검증 보고서
+- `docs/archive/phases/phase6a-verification-and-hardening.md`: 본 검증 보고서
 
 그 외 Phase 6A 구현 코드는 이번 검증 단계에서 수정하지 않았다.
 

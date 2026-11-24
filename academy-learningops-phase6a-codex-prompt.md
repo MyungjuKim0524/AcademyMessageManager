@@ -85,7 +85,7 @@
 ## F. 결과물
 - 실제 코드·테스트에 근거한 최신 README, MVP 로드맵, 아키텍처 및 메시지 처리 상태 설계 업데이트.
 - Phase 6A 첫 Vertical Slice 실제 구현 및 검증 결과.
-- `docs/phase6a-student-enrollment-vertical-slice.md`에 구현 API/화면, DB 변경, 권한 정책, Java/Python 호환성, 테스트 PASS/FAIL/SKIPPED/BLOCKED, 미해결 위험, 다음 개발 단계 기록.
+- `docs/archive/phases/phase6a-student-enrollment-vertical-slice.md`에 구현 API/화면, DB 변경, 권한 정책, Java/Python 호환성, 테스트 PASS/FAIL/SKIPPED/BLOCKED, 미해결 위험, 다음 개발 단계 기록.
 - 기존 Phase 1~5 보고서 삭제 금지.
 
 **최종 기준:** 기술 추가가 아니라, 관리자가 학생을 반에 등록하고 담당 교사가 허용된 학생만 조회할 수 있으며 중복 등록·권한 우회가 차단됨을 실제 테스트로 입증하는 것이다. 환경 제약 때문에 불가능한 검증은 정확히 BLOCKED로 보고한다.

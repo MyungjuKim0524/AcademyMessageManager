@@ -1,6 +1,6 @@
 # Phase 9 — 메시지 운영 현황·누락 탐지·실패 관리·안전한 수동 재시도 최종 보고서
 
-작성일: 2026-11-20 · 계획: `docs/phase9-implementation-plan.md` · 진행: `docs/phase9-progress.md`
+작성일: 2026-11-20 · 계획: `docs/archive/phases/phase9-implementation-plan.md` · 진행: `docs/archive/phases/phase9-progress.md`
 
 ## 1. 목표 및 구현 범위
 안내 대상 확인 → 처리 상태 집계 → 미처리·실패 탐지 → 직원의 안전한 조치(수동 재시도) → 결과·이력 확인.

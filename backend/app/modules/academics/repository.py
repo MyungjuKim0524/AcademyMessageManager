@@ -54,7 +54,8 @@ def held_lesson(today: date) -> ColumnElement[bool]:
 
     Not cancelled, not in the future, and COMPLETED or with at least one attendance row — a past
     SCHEDULED lesson without attendance is "not held". Single definition shared by 메시지 처리
-    현황 (message_operations) and 출결 분석 (analytics); see docs/phase10-metric-definitions.md.
+    현황 (message_operations) and 출결 분석 (analytics);
+    see docs/analytics/phase10-metric-definitions.md.
     """
     any_result = aliased(LessonResult)
     has_attendance = select(any_result.id).where(any_result.lesson_id == Lesson.id).exists()

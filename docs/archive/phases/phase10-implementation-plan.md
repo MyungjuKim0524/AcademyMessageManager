@@ -1,6 +1,6 @@
 # Phase 10 — 교육 데이터 분석: Stage 1 분석·구현 계획
 
-작성일: 2026-11-20 · 산식: `docs/phase10-metric-definitions.md` · 진행: `docs/phase10-progress.md`
+작성일: 2026-11-20 · 산식: `docs/analytics/phase10-metric-definitions.md` · 진행: `docs/archive/phases/phase10-progress.md`
 
 ## 0. 작업 환경 사실
 - Git 없음(설치·초기화 안 됨) → 변경 전 백업(스크래치패드) + 변경 파일을 진행 문서에 기록. `git init`·커밋·업로드 하지 않음.

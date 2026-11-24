@@ -41,11 +41,11 @@ Java 코드는 이 저장소에 포함하지 않는다(`.gitignore`의 `/src/`, 
 | 학부모 안내 메시지 생성·검토·확정·**모의 발송**·실패 재시도·반 단위 일괄 처리 | 구현(발송은 `MockSender`) | `backend/app/modules/notifications/` |
 | 메시지 처리 현황·누락 탐지 | 구현 | `backend/app/modules/message_operations/` |
 | 출결·성적 분석, 관심 필요 학생, 학생 학습 리포트, 대시보드 할 일 | 구현 | `backend/app/modules/analytics/` |
-| 구 CSV/XLSX 가져오기(`/api/imports*`) | **제거**(Phase 9.6, 사용자 승인) | `docs/phase9-6-ux-workflow-report.md` |
+| 구 CSV/XLSX 가져오기(`/api/imports*`) | **제거**(Phase 9.6, 사용자 승인) | `docs/archive/phases/phase9-6-ux-workflow-report.md` |
 | 실제 이메일·SMS 발송 | 미구현(모의 발송만). Java 버전의 Gmail SMTP 실발송은 이식하지 않음 | 8절 향후 검토 과제 |
 | 보강 신청 관리(Java v1.x: 화면에서 신청·완료·취소, 상태 규칙에는 승인 포함, 상태별 안내 문구) | **미이식**. `makeup_request` 테이블 모델만 있고 API·화면이 없다. 메시지는 결석일 때 고정 문장 하나만 넣는다 | `backend/app/modules/notifications/engine.py`(`MAKEUP_SENTENCE`), 9.9절 |
 | 발송 이력 전용 화면(`/deliveries`) | 미구현(Coming Soon 화면) | `frontend/src/app/router.tsx` |
-| Kafka 이벤트 | 미구현(보류) | 의존성·코드 없음. 보류 결정은 `docs/phase6-event-architecture-design.md` |
+| Kafka 이벤트 | 미구현(보류) | 의존성·코드 없음. 보류 결정은 `docs/archive/phases/phase6-event-architecture-design.md` |
 | AI 기능 | 미구현(향후 검토, 범위 미정) | 8절, `docs/ENGINEERING_RETROSPECTIVE.md` 1절 |
 
 React 메뉴(`frontend/src/layout/AppLayout.tsx`):
@@ -80,13 +80,13 @@ React 메뉴(`frontend/src/layout/AppLayout.tsx`):
 | `v1.0-legacy` | 2026-08-21 | Swing 단일 창 `view/MainFrame.java`(1,065줄)가 DAO·Service 9개를 직접 생성한다. 발송 반복문, 퇴원 제외, 이메일 형식 검사도 화면 안에 있다. 운영 Java 소스 30개 | Oracle(`sql/schema_oracle.sql`, 테이블 8개), JDBC DAO 6개. DB 접속 정보는 `config.properties` 파일에서만 읽는다. 일괄 반영은 DAO 안에서 `setAutoCommit(false)`·`commit`·`rollback` | `EmailSendService`: Jakarta Mail SMTP(`mail.smtp.*`, `Transport.send`). Gmail 앱 비밀번호는 `MailCredentialStore`가 AES-GCM + PBKDF2(210,000회)로 암호화해 보관한다. 결과는 `send_log`(`READY/SENT/FAILED/SKIPPED`) | **0개** |
 | `v1.1.0` (Refactoring 1, PR #1) | 2026-09-01 | `domain` 패키지(상태 enum 6개, `LearningMessageComposer`, `MakeupGuidancePolicy`, `MessageSections`)와 `port`(`ConnectionProvider` 등 3개) 추가. `AcademyDataImportService`로 파일 읽기·검증을 하나의 유스케이스로 묶음. 화면의 발송 반복문은 그대로 | Oracle 유지. `DBConnection`이 환경변수를 파일보다 우선 | 변경 없음 | 5개 파일, `@Test` 10개(도메인·검증·CSV 수식 주입) |
 | `v1.2.0` (PostgreSQL Redesign) | 2026-09-03 | `TestScore`, `ImportHashUtil`(파일 SHA-256) 추가. `MainFrame`은 1,077줄로 발송 반복문이 여전히 화면에 있다 | PostgreSQL 스키마(`sql/schema_postgresql.sql`, 테이블 13개, `CHECK` 22줄, 외래키 14개), 시드·제약 검증 SQL, ERD v1.2. `send_log`를 `message_draft → delivery_job → delivery_attempt`로 분리하고 `import_job/row/error` 감사 테이블을 둠. `pom.xml`에는 Oracle·PostgreSQL 드라이버가 함께 있음 | 변경 없음(SMTP). 발송 관련 UNIQUE는 `(delivery_job_id, attempt_no)`뿐이고, 멱등 키나 메시지당 성공 1회 제약은 없다 | 9개 파일, `@Test` 17개. DB 통합 테스트 2개는 `RUN_POSTGRES_INTEGRATION=true`일 때만 실행 |
-| (태그 없음) Java REST 어댑터 단계 | ~2026-11-04 | Java `HttpServer` 기반 `api` 패키지 21개(`ApiServer`, `ApiRoutes`, `CorsPolicy`, `RequestSizeLimiter`, `SecurityHeaders`, multipart 리더). Import Preview·Confirm·History 서비스·JDBC 저장소 13개. React 화면이 이 API를 썼다 | v1.2 스키마 + Import 확정 멱등 키 | 변경 없음 | Java 47개 중 42 PASS, 5 SKIP(PostgreSQL). React 5파일 15개 PASS(`docs/fastapi-transition-baseline.md`) |
+| (태그 없음) Java REST 어댑터 단계 | ~2026-11-04 | Java `HttpServer` 기반 `api` 패키지 21개(`ApiServer`, `ApiRoutes`, `CorsPolicy`, `RequestSizeLimiter`, `SecurityHeaders`, multipart 리더). Import Preview·Confirm·History 서비스·JDBC 저장소 13개. React 화면이 이 API를 썼다 | v1.2 스키마 + Import 확정 멱등 키 | 변경 없음 | Java 47개 중 42 PASS, 5 SKIP(PostgreSQL). React 5파일 15개 PASS(`docs/archive/phases/fastapi-transition-baseline.md`) |
 
 - v1.0의 문제와 v1.1의 개선 목표는 그 시점의 문서에 남아 있다. 이 저장소의 사본은 기존 저장소 `v1.2.0`의 문서와 같다.
-  - `docs/PORTFOLIO_BACKEND_REFACTORING_EVIDENCE.md`(문제 6개와 코드 증거)
+  - `docs/archive/java-v1/PORTFOLIO_BACKEND_REFACTORING_EVIDENCE.md`(문제 6개와 코드 증거)
   - `docs/refactoring/01-business-readable-refactoring.md`
   - `docs/refactoring/02-backend-architecture-refactoring.md`
-  - `docs/BACKEND_REQUIREMENTS.md`
+  - `docs/archive/java-v1/BACKEND_REQUIREMENTS.md`
 - v1.1 문서(`02-…` "다음 수직 기능에서 권장할 작업")가 다음 과제로 남긴 네 가지와 이후 경과
   1. 화면의 DB 반영·메일 발송 절차를 use case로 이동: **Java에서는 v1.2까지 이뤄지지 않았다**(`MainFrame`의 `sendEmail` 호출 2곳). 웹 전환에서 서비스 계층으로 옮겨졌다(9.2절).
   2. DAO 통합 테스트: v1.2의 `PostgreSqlDaoIntegrationTest`(Oracle Testcontainers가 아니라 전용 PostgreSQL 테스트 DB)
@@ -131,66 +131,66 @@ Java 경로(Swing / Java HttpServer → service → port → JDBC → PostgreSQL
 ### Phase 1 — FastAPI 기반과 Message Preview (2026-11-04)
 - `GET /api/health`, `POST /api/messages/preview`를 Java 응답 계약 그대로 이식했다.
 - `{code, message, fields}` 오류 형식, 요청 ID·CORS·크기 제한·보안 헤더. Java/Python 공통 fixture 7/7 일치.
-- (`docs/phase1-fastapi-migration.md`)
+- (`docs/archive/phases/phase1-fastapi-migration.md`)
 
 ### Phase 2 — Import Preview (2026-11-06)
 - CSV/XLSX를 DB 저장 없이 파싱·검증했다(10MiB, 5,000행, 64열). 계약 27/27 일치.
 - 이 모듈은 Phase 9.6에서 제거되었다.
-- (`docs/phase2-import-preview-migration.md`)
+- (`docs/archive/phases/phase2-import-preview-migration.md`)
 
 ### Phase 3 — PostgreSQL Infrastructure (2026-11-08)
 - 개발 DB(`academy_learningops_dev`, 55431)와 테스트 DB(`academy_learningops_test`, 55432)를 컨테이너·계정·볼륨·라벨로 분리했다.
 - DB URL 허용 목록, Alembic `001_java_schema_baseline`.
-- (`docs/phase3-postgresql-infrastructure.md`)
+- (`docs/archive/phases/phase3-postgresql-infrastructure.md`)
 
 ### Phase 4 — Secure Import History/Confirm (2026-11-09)
 - Import Confirm의 단일 트랜잭션, UUID 멱등 키, 감사 기록 동시 저장.
 - 이 기능도 Phase 9.6에서 제거되었다.
-- (`docs/phase4-secure-import-migration.md`)
+- (`docs/archive/phases/phase4-secure-import-migration.md`)
 
 ### Phase 5 — 인증·RBAC (2026-11-12)
 - 로그인/로그아웃/`me`, ADMIN·TEACHER·ASSISTANT 직원 계정.
 - Argon2id, 서버 측 불투명 세션(해시 저장), HttpOnly·SameSite 쿠키, 세션 결합 이중 제출 CSRF.
-- (`docs/phase5-auth-rbac-implementation.md`, `docs/decisions/0001-local-session-authentication.md`)
+- (`docs/archive/phases/phase5-auth-rbac-implementation.md`, `docs/decisions/0001-local-session-authentication.md`)
 
 ### Phase 6A·6B — 학생·반·수강, 직원·담당 반 배정 (2026-11-15 ~ 11-17)
 - `learningops` 모듈: 관리자의 반·학생·수강 등록, 담당 반 학생 조회.
 - 직원 생성·활성/비활성(세션 폐기), 담당 반 배정·해제.
 - 학생·반 중복 수강과 열린 배정 중복을 DB UNIQUE로 차단(003, 004), 직원 표시 이름(005).
-- (`docs/phase6a-*.md`, `docs/phase6b-staff-classroom-management.md`)
+- (`docs/archive/phases/phase6a-*.md`, `docs/archive/phases/phase6b-staff-classroom-management.md`)
 
 ### Phase 7·7.1 — 수업·출결·성적, 안정화 (2026-11-18)
 - 수업 회차, 출결, 평가·성적.
 - 담당 반 권한, DB 제약, 트리거 기반 버전(동시 수정 감지), 변경 감사(006).
 - 같은 날 복수 교시, 날짜가 있는 휴원 이력(기간 중복 EXCLUDE), 인정결석(007).
-- (`docs/phase7-lessons-attendance-grades.md`, `docs/phase7-1-stabilization.md`)
+- (`docs/archive/phases/phase7-lessons-attendance-grades.md`, `docs/archive/phases/phase7-1-stabilization.md`)
 
 ### Phase 8·8.1 — 학부모 안내 메시지, 엑셀 업로드 (2026-11-18 ~ 11-19)
 - 템플릿 → 초안 → 검토 → 확정 → **모의 발송** → 이력.
 - 메시지 행 잠금·버전, 멱등 키, 메시지당 성공 1회 부분 UNIQUE(008).
 - 학원 주간 엑셀(시트 = 시간대, 반 블록)을 업로드하면 반별 출결·등급·점수가 저장되고, 수업 유형별 기본 템플릿으로 초안을 만든다(009).
-- (`docs/phase8-parent-notification-workflow.md`, `docs/phase8-1-excel-upload.md`)
+- (`docs/archive/phases/phase8-parent-notification-workflow.md`, `docs/archive/phases/phase8-1-excel-upload.md`)
 
 ### Phase 9·9.5·9.6 — 메시지 운영, UI/UX (2026-11-20)
 - 처리 현황 집계, 미처리·실패 탐지, 실패 건 수동 재시도(같은 멱등 규칙).
 - 업무 중심 메뉴·화면 정리(프론트엔드 전용).
 - 구 CSV/XLSX 가져오기 제거, `import_*` 테이블 삭제(010, 데이터가 있으면 거부).
-- (`docs/phase9-message-operations.md`, `docs/phase9-5-ux-architecture-improvement.md`, `docs/phase9-6-ux-workflow-report.md`)
+- (`docs/archive/phases/phase9-message-operations.md`, `docs/archive/phases/phase9-5-ux-architecture-improvement.md`, `docs/archive/phases/phase9-6-ux-workflow-report.md`)
 
 ### Phase 10·10.5 — 교육 데이터 분석, 아키텍처 리뷰 (2026-11-20)
 - 반별·학생별 출결 통계, 성적 분석, 지표 정의 문서.
 - 아키텍처 리뷰 결과 수정:
   - 확정 메시지도 원본이 바뀌면 발송 차단(H1)
   - 반 학생 목록 절단(M3), 레거시 의존(M4), '진행된 수업' 규칙 공통화(B-2)
-- (`docs/phase10-learning-analytics.md`, `docs/reviews/phase10_5_*.md`)
+- (`docs/archive/phases/phase10-learning-analytics.md`, `docs/reviews/phase10_5_*.md`)
 
 ### Phase 11 — 통합·업무 개선·보안·정합성·릴리스 준비·배포 (2026-11-20 ~ 11-24, 2026-11-24 배포 완료)
 - **11-0**: 통합 테스트 스크립트의 컨테이너 라벨·포트 검사 결함 수정(PS 5.1에서 검사를 건너뛰던 문제). (`docs/reviews/phase11_0_test_guard_fix.md`)
 - **업무 개선**(사용자 요청):
-  - 반 단위 일괄 검토·확정·모의 발송(`docs/phase11-batch-review.md`)
-  - 업로드 시간대(시트) 선택·변경 없는 행 생략(`docs/phase11-upload-time-slots.md`)
-  - 학생·반 관리 재구성(`docs/phase11-class-student-management.md`)
-  - 성적 분석 재설계, 직원 삭제 B안(011), 대시보드 할 일(`docs/phase11-analytics-staff-dashboard.md`)
+  - 반 단위 일괄 검토·확정·모의 발송(`docs/archive/phases/phase11-batch-review.md`)
+  - 업로드 시간대(시트) 선택·변경 없는 행 생략(`docs/archive/phases/phase11-upload-time-slots.md`)
+  - 학생·반 관리 재구성(`docs/archive/phases/phase11-class-student-management.md`)
+  - 성적 분석 재설계, 직원 삭제 B안(011), 대시보드 할 일(`docs/archive/phases/phase11-analytics-staff-dashboard.md`)
 - **11-2 보안**: 감사(`docs/reviews/phase11_2_security_audit.md`) 후 다음을 수정했다.
   - SEC-01: 업로드 '신규'가 다른 반 기존 학생을 재사용하던 문제
   - SEC-02: 관리자 변경 감사 누락
@@ -242,7 +242,7 @@ Java 경로(Swing / Java HttpServer → service → port → JDBC → PostgreSQL
 - **반 일괄 처리 결석생 선택 규칙**(2026-11-23, 사용자 요청, 프론트엔드 전용)
   - 배경: 결석·인정결석 학생도 설계대로 초안이 만들어지는데, 전체 선택으로 함께 확정·발송될 수 있었다.
   - 전체 선택은 결석·인정결석 메시지를 빼고 선택하고, 확정 확인창에 포함된 결석·인정결석 건수를 표시한다. 직접 체크하면 지금처럼 확정·발송할 수 있다.
-  - 초안 생성·확정·발송 규칙, API, DB는 바꾸지 않았다(`docs/phase11-batch-review.md` 동작 2).
+  - 초안 생성·확정·발송 규칙, API, DB는 바꾸지 않았다(`docs/archive/phases/phase11-batch-review.md` 동작 2).
 - **11-5 클라우드 배포**(2026-11-24, 사용자 수행)
   - 서비스: https://academy-message-manager.vercel.app — Vercel(React) · Render(FastAPI) · Neon(PostgreSQL). 운영 DB에는 시연용 가상 데이터만 있다.
   - 배포 후 점검(2026-11-25 확인, `docs/reviews/phase11_4_release_readiness.md` 12절, 배포 가이드 6·8절):
@@ -376,8 +376,8 @@ Java 경로(Swing / Java HttpServer → service → port → JDBC → PostgreSQL
 - Java 레거시: 이 저장소에 포함하지 않는다. Migration 010(`import_*` 삭제) 이후 Java 테스트를 다시 실행한 기록은 없다.
 - 빈 PostgreSQL 17 일회용 DB에서 001→011 전체 재구성 검증 완료(2026-11-23, Phase 11-5-B). `011_staff_deleted_status` head, `btree_gist`, FK·UNIQUE·CHECK·Trigger와 Seed 멱등성·부분 복구를 확인했다.
 - 개발 DB 불변조건 점검: 미실행(사용자 보류). revision은 2026-11-21에 확인했다.
-- Phase 11 업무 시나리오 수동 점검표(`docs/phase11-manual-scenario-checklist.md`): 실행 결과는 이 문서에서 확인하지 않았다.
-- API 계약 문서(10.5 M5): Java 시절 문서 3개(`docs/api/openapi.yaml`, `docs/api/HTTP_API_SECURITY.md`, `docs/IMPORT_CONFIRM.md`)에 "이전 기록" 표시를 붙였다(2026-11-24). 현재 API 명세는 FastAPI `/openapi.json`(`ACADEMY_API_DOCS=1`)이다. 저장소에 둘 OpenAPI 명세 재생성은 하지 않았고, 레거시 미리보기 API 유지 여부(M4) 결정 뒤로 미룬다.
+- Phase 11 업무 시나리오 수동 점검표(`docs/archive/phases/phase11-manual-scenario-checklist.md`): 실행 결과는 이 문서에서 확인하지 않았다.
+- API 계약 문서(10.5 M5): Java 시절 문서 3개(`docs/api/openapi.yaml`, `docs/api/HTTP_API_SECURITY.md`, `docs/archive/java-v1/IMPORT_CONFIRM.md`)에 "이전 기록" 표시를 붙였다(2026-11-24). 현재 API 명세는 FastAPI `/openapi.json`(`ACADEMY_API_DOCS=1`)이다. 저장소에 둘 OpenAPI 명세 재생성은 하지 않았고, 레거시 미리보기 API 유지 여부(M4) 결정 뒤로 미룬다.
 
 ### 미완료
 
@@ -538,9 +538,9 @@ MMS는 이미지 등 멀티미디어 발송 요구사항이 확인될 때만 추
   - v1.0은 `MainFrame`이 DAO·Service 객체 9개를 직접 만든다. 발송 반복문, 퇴원 제외(`isWithdrawn`), 이메일 형식 검사가 화면에 있다.
   - v1.1에서 `domain`(9개)과 `port`(3개)를 추가해 규칙을 분리했다. 그래도 v1.2의 `MainFrame`(1,077줄)은 여전히 `sendEmail`을 두 곳에서 직접 호출한다.
 - **Problem**:
-  - 업무 상태가 문자열 비교에 숨어 있었고, 메시지 규칙이 DB 조회와 결합되어 있었다(`docs/PORTFOLIO_BACKEND_REFACTORING_EVIDENCE.md` 문제 1~4).
+  - 업무 상태가 문자열 비교에 숨어 있었고, 메시지 규칙이 DB 조회와 결합되어 있었다(`docs/archive/java-v1/PORTFOLIO_BACKEND_REFACTORING_EVIDENCE.md` 문제 1~4).
   - v1.1 문서가 "화면의 DB 반영·메일 발송 절차를 use case로 이동"을 다음 과제로 남겼다(`docs/refactoring/02-backend-architecture-refactoring.md`).
-- **Decision**: Router → Service → Repository. 업무 규칙·트랜잭션·권한 검사는 서비스가 맡고, 라우터는 입력·응답만 다룬다(`docs/phase9-5-ux-architecture-improvement.md`, Phase 10.5 리뷰).
+- **Decision**: Router → Service → Repository. 업무 규칙·트랜잭션·권한 검사는 서비스가 맡고, 라우터는 입력·응답만 다룬다(`docs/archive/phases/phase9-5-ux-architecture-improvement.md`, Phase 10.5 리뷰).
 - **After**:
   - 모듈 7개: `auth`, `learningops`, `academics`, `lesson_upload`, `notifications`, `message_operations`, `analytics`
   - 발송 결정(퇴원·이메일·원본 변경 검사)은 `notifications/service.py`에 있다.
@@ -659,9 +659,9 @@ MMS는 이미지 등 멀티미디어 발송 요구사항이 확인될 때만 추
   | 버전 | 정의된 테스트 | 실행 결과 기록 | 근거 |
   |---|---|---|---|
   | v1.0 | **0**(`src/test` 폴더가 없음) | 해당 없음 | 태그 `v1.0-legacy`의 파일 목록 |
-  | v1.1 | **10**(`@Test` 메서드 10개, 파일 5개) | **Tests run 10, Failures 0, Errors 0, Skipped 0**(`mvn clean verify`) | 태그 `v1.1.0` 코드, `docs/PORTFOLIO_BACKEND_REFACTORING_EVIDENCE.md` 10절 |
+  | v1.1 | **10**(`@Test` 메서드 10개, 파일 5개) | **Tests run 10, Failures 0, Errors 0, Skipped 0**(`mvn clean verify`) | 태그 `v1.1.0` 코드, `docs/archive/java-v1/PORTFOLIO_BACKEND_REFACTORING_EVIDENCE.md` 10절 |
   | v1.2 | **17**(`@Test` 메서드 17개, 파일 9개) | **미확인**(실행 결과 기록을 찾지 못함). 그중 DB 통합 2개는 `RUN_POSTGRES_INTEGRATION=true`일 때만 실행되므로, 기본 `mvn test`에서는 15개가 실행 대상이다(코드 기준 추정) | 태그 `v1.2.0` 코드 |
-  | Java REST 어댑터 단계 | — | Java 47 실행(42 PASS / 5 SKIP), React 15 PASS(2026-11-04) | `docs/fastapi-transition-baseline.md` |
+  | Java REST 어댑터 단계 | — | Java 47 실행(42 PASS / 5 SKIP), React 15 PASS(2026-11-04) | `docs/archive/phases/fastapi-transition-baseline.md` |
 
   - Java 테스트에는 파라미터·반복 테스트(`@ParameterizedTest` 등)가 없다. 그래서 `@Test` 1개가 실행 1건이다.
   - 동시성 테스트는 없었다. 보강 상태의 동시 변경 감지는 코드로 추가됐다(PORTFOLIO 문제 5).
@@ -691,7 +691,7 @@ MMS는 이미지 등 멀티미디어 발송 요구사항이 확인될 때만 추
 ### 9.9 웹에서 빠지거나 약해진 것
 
 - **보강 신청 관리 미이식**: Java v1.x의 기능이 웹에는 없다.
-  - Java에 있던 것: 화면의 보강 신청·완료·취소(상태 규칙에는 신청 → 승인 → 완료/취소 포함, 승인 버튼은 없음), 재원생만 신청, 퇴원 시 미완료 보강 취소, 상태별 보호자 안내 문구(`MakeupDAO`, `MakeupGuidancePolicy`, `docs/BACKEND_REQUIREMENTS.md`)
+  - Java에 있던 것: 화면의 보강 신청·완료·취소(상태 규칙에는 신청 → 승인 → 완료/취소 포함, 승인 버튼은 없음), 재원생만 신청, 퇴원 시 미완료 보강 취소, 상태별 보호자 안내 문구(`MakeupDAO`, `MakeupGuidancePolicy`, `docs/archive/java-v1/BACKEND_REQUIREMENTS.md`)
   - 웹에 있는 것: `makeup_request` 테이블 모델과, 결석일 때 넣는 고정 문장 하나(`engine.py`의 `MAKEUP_SENTENCE`)뿐이다.
   - **원인(개발자 회고, `docs/ENGINEERING_RETROSPECTIVE.md` 9절)**:
     - 의도적으로 제외한 것이 아니다. 기존 기능의 이식 범위를 충분히 확인하지 못해 생긴 **누락**이다.
@@ -704,8 +704,8 @@ MMS는 이미지 등 멀티미디어 발송 요구사항이 확인될 때만 추
 
 ## 근거와 한계
 
-- 주요 근거: `README.md`, `backend/README.md`, `docs/phase*-*.md`, `docs/reviews/*.md`, `docs/deployment/*.md`, 실제 소스·설정·마이그레이션
-- Java 이력: 기존 저장소 태그 `v1.0-legacy`·`v1.1.0`·`v1.2.0`의 코드를 `git show`/`git ls-tree`로 직접 확인했다(2·9절). 태그 이후의 Java REST 어댑터 단계는 로컬 사본과 `docs/fastapi-transition-baseline.md`가 근거다.
+- 주요 근거: `README.md`, `backend/README.md`, `docs/archive/phases/phase*-*.md`, `docs/reviews/*.md`, `docs/deployment/*.md`, 실제 소스·설정·마이그레이션
+- Java 이력: 기존 저장소 태그 `v1.0-legacy`·`v1.1.0`·`v1.2.0`의 코드를 `git show`/`git ls-tree`로 직접 확인했다(2·9절). 태그 이후의 Java REST 어댑터 단계는 로컬 사본과 `docs/archive/phases/fastapi-transition-baseline.md`가 근거다.
 - 웹 버전의 Git 이력: v2.0.0 이전 작업은 커밋 하나(`ca15e62`, 2026-11-21)라서 Phase 순서와 날짜는 보고서 작성일을 근거로 한다. 그 이후 변경은 커밋 이력으로 확인할 수 있다.
 - 테스트 결과: 6절 표의 시점에 실제로 실행한 결과다.
 - 개발 DB: 2026-11-21 Migration 011을 적용할 때 읽기 전용 세션으로 revision·제약·직원 수만 조회했다.

@@ -1,6 +1,6 @@
 # Phase 7 — 수업·출결·성적 관리 최종 보고서
 
-작성일: 2026-11-18 · 설계 상세: `docs/phase7-implementation-plan.md` · 진행 기록: `docs/phase7-progress.md`
+작성일: 2026-11-18 · 설계 상세: `docs/archive/phases/phase7-implementation-plan.md` · 진행 기록: `docs/archive/phases/phase7-progress.md`
 
 ## 1. 목표 및 구현 범위
 
@@ -208,7 +208,7 @@ Phase 8 메시지 생성은 동일한 출결 원천을 사용할 수 있다. 메
 - 신규: `backend/alembic/versions/006_phase7_lessons_grades.py`, `backend/app/modules/academics/{__init__,schemas,repository,service,router}.py`,
   `backend/tests/test_phase7_schema_integrity.py`, `backend/tests/test_phase7_academics_integration.py`,
   `frontend/src/features/classwork/{api.ts,common.tsx,ClassworkPage.tsx,LessonsTab.tsx,AttendanceTab.tsx,GradesTab.tsx,StudentRecordsDrawer.tsx,ClassworkPage.test.tsx}`,
-  `docs/phase7-implementation-plan.md`, `docs/phase7-progress.md`, 본 문서
+  `docs/archive/phases/phase7-implementation-plan.md`, `docs/archive/phases/phase7-progress.md`, 본 문서
 - 수정: `backend/app/db/models/tables.py`, `backend/app/db/schema.py`, `backend/app/main.py`,
   `backend/tests/test_postgres_integration.py`, `backend/tests/test_db_safety.py`, `frontend/src/app/router.tsx`, `frontend/src/layout/AppLayout.tsx`
 

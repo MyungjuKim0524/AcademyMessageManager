@@ -1,6 +1,6 @@
 # Phase 9.6 — UI/UX 구조 개선 및 업무 동선 최적화: 최종 보고서
 
-작성일: 2026-11-20 · 계획(Phase 0): `docs/phase9-6-ux-workflow-plan.md` · 선행: `docs/phase9-5-ux-architecture-improvement.md`
+작성일: 2026-11-20 · 계획(Phase 0): `docs/archive/phases/phase9-6-ux-workflow-plan.md` · 선행: `docs/archive/phases/phase9-5-ux-architecture-improvement.md`
 
 범위: **프론트엔드만**. 백엔드·API·DB·마이그레이션·권한 규칙 변경 없음, 새 라이브러리 없음. Git이 없어 작업 전 `frontend/src`를 `D:\Temp\…\scratchpad\backup-src-before`에 백업함.
 

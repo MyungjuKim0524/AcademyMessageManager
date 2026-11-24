@@ -222,6 +222,6 @@ docker buildx prune --filter "until=168h" --force
 
 - Docker log: `%LOCALAPPDATA%\Docker\log\host\com.docker.backend.exe.log`
 - Compose: `compose.postgres-test.yml`
-- DB 보고: `docs/phase3-postgresql-infrastructure.md`
-- Phase 4 장애 기록: `docs/phase4-secure-import-migration.md`
+- DB 보고: `docs/archive/phases/phase3-postgresql-infrastructure.md`
+- Phase 4 장애 기록: `docs/archive/phases/phase4-secure-import-migration.md`
 - 현재 Git 이력: `.git` 부재로 검증 불가

@@ -2,7 +2,7 @@
 
 | 항목 | 내용 |
 |---|---|
-| 현재 Stage | **Phase 8 완료 (2026-11-20)** — 사용자 브라우저 확인 1~8 완료 후 요청 3건 반영, 다음은 Phase 9. 보고서: `docs/phase8-parent-notification-workflow.md`(Phase 8), `docs/phase8-1-excel-upload.md`(Phase 8.1) |
+| 현재 Stage | **Phase 8 완료 (2026-11-20)** — 사용자 브라우저 확인 1~8 완료 후 요청 3건 반영, 다음은 Phase 9. 보고서: `docs/archive/phases/phase8-parent-notification-workflow.md`(Phase 8), `docs/archive/phases/phase8-1-excel-upload.md`(Phase 8.1) |
 | 완료(8) | 1 분석·설계, 2 Migration 008, 3 템플릿 엔진, 4 미리보기·초안, 5 검토·확정, 6 Mock Sender, 7 React, 8 회귀·보고 |
 | 완료(8.1) | Migration 009, 엑셀 반 블록 파서, 업로드 미리보기·확정 API, 수업유형별 기본 템플릿 지정, `{성적요약}` "N/M", 가져오기 `session_no=1` 수정, 출결 화면 기본값, 업로드 화면·탭 정리, 회귀 |
 | 정책 변경 | 2026-11-18: 조교가 내용 확정·모의 발송 직접 수행, "승인" → "내용 확정". 2026-11-19: 메시지 생성 경로를 엑셀 업로드로 통일(수동 생성은 '누락·예외 생성'), 출결 불일치 시 앱 값 유지·초안 미생성, 성적 문구에서 "점" 제거 |

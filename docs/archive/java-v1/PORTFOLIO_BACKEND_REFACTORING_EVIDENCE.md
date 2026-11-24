@@ -4,7 +4,7 @@
 >
 > **(2026-11-21 추가)** 이 문서는 Java 데스크톱 버전의 기록이며, 기존 Java 저장소 `v1.2.0`의 같은 파일과 내용이 같다.
 > - 본문의 Java 코드 경로(`src/main/java/...`)는 기존 저장소의 태그 기준이다. 현재 웹 저장소에는 Java 코드가 포함되어 있지 않다.
-> - 이 문서의 문제들이 FastAPI·React 웹에서 어떻게 이어졌는지, 무엇이 남거나 빠졌는지는 [Development History 9절](DEVELOPMENT_HISTORY.md#9-legacy--web-비교-개선-항목별-근거)에 있다.
+> - 이 문서의 문제들이 FastAPI·React 웹에서 어떻게 이어졌는지, 무엇이 남거나 빠졌는지는 [Development History 9절](../../DEVELOPMENT_HISTORY.md#9-legacy--web-비교-개선-항목별-근거)에 있다.
 
 ## 1. 프로젝트 개요
 

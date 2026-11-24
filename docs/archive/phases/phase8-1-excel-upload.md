@@ -1,6 +1,6 @@
 # Phase 8.1 — 엑셀 업로드 기반 학부모 안내 보고서
 
-작성일: 2026-11-19 · 선행: `docs/phase8-parent-notification-workflow.md` · 진행: `docs/phase8-progress.md`
+작성일: 2026-11-19 · 선행: `docs/archive/phases/phase8-parent-notification-workflow.md` · 진행: `docs/archive/phases/phase8-progress.md`
 
 ## 1. 목표
 
