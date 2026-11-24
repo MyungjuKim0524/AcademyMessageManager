@@ -68,6 +68,23 @@ def access_label(route: APIRoute) -> tuple[str, str]:
     return who, csrf
 
 
+# Routes the screens do not call, marked on the route itself: deprecated=True (legacy) or
+# openapi_extra={"x-usage": ...}. A route with no mark is used by the web screens.
+USAGE = {
+    "ops": "운영 점검",
+    "unused-by-ui": "화면 미사용",
+}
+
+
+def usage_label(route: APIRoute) -> str:
+    usage = (route.openapi_extra or {}).get("x-usage")
+    if usage is not None and usage not in USAGE:
+        raise SystemExit(f"unknown x-usage {usage!r} on {route.path}; use one of {list(USAGE)}")
+    if route.deprecated:
+        return "레거시"
+    return USAGE.get(usage, "")
+
+
 def routes_of(key: str) -> list[APIRoute]:
     """Routes of one router module, or the routes declared on the app itself for "main"."""
     if key == "main":
@@ -82,16 +99,17 @@ def build_spec() -> str:
 
 
 def build_summary() -> str:
-    rows: dict[str, list[tuple[str, str, str, str, str]]] = {key: [] for key, _ in MODULES}
+    rows: dict[str, list[tuple[str, ...]]] = {key: [] for key, _ in MODULES}
     unnamed: list[str] = []
     for key, _title in MODULES:
         for route in routes_of(key):
             who, csrf = access_label(route)
+            usage = usage_label(route)
             summary = (route.summary or "").strip()
             if not summary:
                 unnamed.append(f"{route.path} ({route.name})")
             for method in sorted(route.methods, key=METHOD_ORDER.index):
-                rows[key].append((route.path, method, who, csrf, summary))
+                rows[key].append((route.path, method, who, csrf, usage, summary))
 
     if unnamed:  # every route needs a Korean summary="..." for the table and Swagger UI
         raise SystemExit("routes without summary=: " + ", ".join(unnamed))
@@ -122,18 +140,29 @@ def build_summary() -> str:
         "반 데이터를 다루는 `직원` 엔드포인트에서 선생님·조교는 **배정된 반만** 다룰 수 있다(서비스 계층에서 판정). "
         "**CSRF 열**: `필요`이면 `X-CSRF-Token` 헤더를 보내야 한다.",
         "",
+        "**용도 열**: 비어 있으면 웹 화면이 쓰는 API다. "
+        "`레거시`는 Java 시절 기능으로 정리 대상이다(OpenAPI `deprecated`, Swagger UI에 취소선). "
+        "`운영 점검`은 상태 확인·배포 점검용이다. "
+        "`화면 미사용`은 현재 API지만 웹 화면이 호출하지 않는다.",
+        "",
     ]
+    marked = [(r[1], r[0], r[4]) for key, _ in MODULES for r in rows[key] if r[4]]
+    if marked:
+        lines += ["화면이 쓰지 않는 API:", ""]
+        lines += [f"- `{method} {path}`: {usage}" for method, path, usage in marked]
+        lines.append("")
     for key, title in MODULES:
         if not rows[key]:
             continue
         lines += [
             f"## {title}",
             "",
-            "| 메서드 | 경로 | 권한 | CSRF | 설명 |",
-            "|---|---|---|---|---|",
+            "| 메서드 | 경로 | 권한 | CSRF | 용도 | 설명 |",
+            "|---|---|---|---|---|---|",
         ]
-        for path, method, who, csrf, summary in rows[key]:
-            lines.append(f"| `{method}` | `{path}` | {who} | {csrf} | {summary} |")
+        for path, method, who, csrf, usage, summary in rows[key]:
+            usage_cell = f"**{usage}**" if usage else ""
+            lines.append(f"| `{method}` | `{path}` | {who} | {csrf} | {usage_cell} | {summary} |")
         lines.append("")
     lines += [
         "## 이전 기록",

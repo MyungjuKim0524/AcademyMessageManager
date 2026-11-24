@@ -8103,7 +8103,8 @@
             "description": "Successful Response"
           }
         },
-        "summary": "로그인 제한 기준 주소 진단(배포 점검용, 기본 꺼짐)"
+        "summary": "로그인 제한 기준 주소 진단(배포 점검용, 기본 꺼짐)",
+        "x-usage": "ops"
       }
     },
     "/api/auth/login": {
@@ -9297,7 +9298,8 @@
             "description": "Successful Response"
           }
         },
-        "summary": "서버 상태 확인"
+        "summary": "서버 상태 확인",
+        "x-usage": "ops"
       }
     },
     "/api/lesson-uploads/confirm": {
@@ -9940,7 +9942,8 @@
             "description": "Validation Error"
           }
         },
-        "summary": "반별 처리 현황"
+        "summary": "반별 처리 현황",
+        "x-usage": "unused-by-ui"
       }
     },
     "/api/message-operations/obligations": {
@@ -10095,7 +10098,8 @@
             "description": "Validation Error"
           }
         },
-        "summary": "안내 대상 상세"
+        "summary": "안내 대상 상세",
+        "x-usage": "unused-by-ui"
       }
     },
     "/api/message-operations/summary": {
@@ -10170,6 +10174,7 @@
     },
     "/api/messages/preview": {
       "post": {
+        "deprecated": true,
         "operationId": "preview_message_api_messages_preview_post",
         "requestBody": {
           "content": {

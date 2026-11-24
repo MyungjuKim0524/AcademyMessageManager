@@ -43,6 +43,7 @@ def todo(principal: Reader, db: Db, request: Request):
     "/classrooms/{classroom_id}",
     summary="반별 처리 현황",
     response_model=ClassroomCounts,
+    openapi_extra={"x-usage": "unused-by-ui"},
 )
 def classroom_summary(
     classroom_id: int, principal: Reader, db: Db, request: Request, date_from: date, date_to: date
@@ -73,6 +74,7 @@ def obligations(
 @router.get(
     "/obligations/{lesson_id}/{enrollment_id}",
     summary="안내 대상 상세",
+    openapi_extra={"x-usage": "unused-by-ui"},
     response_model=ObligationDetail,
 )
 def obligation_detail(

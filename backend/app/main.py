@@ -102,6 +102,7 @@ async def internal_error_handler(request: Request, exc: Exception):
     "/api/health",
     summary="서버 상태 확인",
     response_model=HealthResponse,
+    openapi_extra={"x-usage": "ops"},
 )
 async def health() -> HealthResponse:
     return HealthResponse(status="UP")
@@ -110,6 +111,7 @@ async def health() -> HealthResponse:
 @app.post(
     "/api/messages/preview",
     summary="메시지 문구 미리보기(Java 시절 계약 호환)",
+    deprecated=True,
     response_model=MessagePreviewResponse,
 )
 async def preview_message(

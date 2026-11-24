@@ -154,6 +154,7 @@ def logout(
 @router.get(
     "/client-address",
     summary="로그인 제한 기준 주소 진단(배포 점검용, 기본 꺼짐)",
+    openapi_extra={"x-usage": "ops"},
     response_model=ClientAddressDiagnosis,
 )
 def client_address_diagnosis(
