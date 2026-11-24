@@ -1,11 +1,18 @@
 import { Alert, Button, Card, Form, Input, Typography } from 'antd'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router'
 import { ApiClientError } from '../../shared/api/ApiClientError'
+import { pingServer, waitForServer } from '../../shared/api/serverWake'
 import { completePasswordReset } from './api'
 import { useAuth } from './AuthProvider'
 
 export const MIN_PASSWORD = 12
+export const WAKING_NOTICE = '서버를 준비하는 중입니다. 서버가 쉬고 있었다면 30초~1분 정도 걸립니다.'
+export const SERVER_DOWN_NOTICE = '서버가 아직 응답하지 않습니다. 잠시 후 다시 시도해주세요.'
+export const SLOW_SERVER_NOTICE = '서버 응답이 늦어 요청을 처리하지 못했습니다. 잠시 후 다시 시도해주세요.'
+
+/** unknown: not confirmed yet; waking: pinging a sleeping server; down: gave up waiting. */
+type ServerState = 'unknown' | 'ready' | 'waking' | 'down'
 
 export function LoginPage() {
   const { user, login, notice } = useAuth()
@@ -14,16 +21,50 @@ export function LoginPage() {
   const [submitting, setSubmitting] = useState(false)
   const [resetting, setResetting] = useState(false)
   const [resetDone, setResetDone] = useState(false)
+  const [server, setServer] = useState<ServerState>('unknown')
+
+  // Start waking the (possibly sleeping) server while the user is still typing.
+  useEffect(() => {
+    let active = true
+    void pingServer().then((up) => {
+      if (!active) return
+      if (up) { setServer('ready'); return }
+      setServer('waking')
+      void waitForServer().then((ok) => { if (active) setServer(ok ? 'ready' : 'down') })
+    })
+    return () => { active = false }
+  }, [])
+
   if (user) return <Navigate to="/" replace />
+
+  /** Waits for the server before a request that must not be retried (login, reset). */
+  const ensureServer = async (): Promise<boolean> => {
+    if (server === 'ready') return true
+    setServer('waking')
+    const ok = await waitForServer()
+    setServer(ok ? 'ready' : 'down')
+    return ok
+  }
+
+  /** A timeout on the real request: show why, and re-check the server before the next try. */
+  const failureMessage = (reason: unknown, fallback: string): string => {
+    if (!(reason instanceof ApiClientError)) return fallback
+    if (reason.code === 'NETWORK_ERROR') {
+      setServer('unknown')
+      return SLOW_SERVER_NOTICE
+    }
+    return reason.message
+  }
 
   const submit = async (values: { email: string; password: string }) => {
     setSubmitting(true)
     setError('')
     try {
+      if (!(await ensureServer())) return
       await login(values.email, values.password)
       navigate('/', { replace: true })
     } catch (reason) {
-      setError(reason instanceof ApiClientError ? reason.message : '로그인하지 못했습니다.')
+      setError(failureMessage(reason, '로그인하지 못했습니다.'))
     } finally {
       setSubmitting(false)
     }
@@ -35,11 +76,12 @@ export function LoginPage() {
     setSubmitting(true)
     setError('')
     try {
+      if (!(await ensureServer())) return
       await completePasswordReset(values.email, values.code, values.new_password)
       setResetDone(true)
       setResetting(false)
     } catch (reason) {
-      setError(reason instanceof ApiClientError ? reason.message : '비밀번호를 설정하지 못했습니다.')
+      setError(failureMessage(reason, '비밀번호를 설정하지 못했습니다.'))
     } finally {
       setSubmitting(false)
     }
@@ -53,6 +95,8 @@ export function LoginPage() {
       </Typography.Paragraph>
       {notice && !resetting && <Alert type="warning" title={notice} showIcon style={{ marginBottom: 12 }} />}
       {resetDone && !resetting && <Alert type="success" title="비밀번호를 설정했습니다. 새 비밀번호로 로그인하세요." showIcon style={{ marginBottom: 12 }} />}
+      {server === 'waking' && <Alert type="info" title={WAKING_NOTICE} showIcon style={{ marginBottom: 12 }} />}
+      {server === 'down' && <Alert type="warning" title={SERVER_DOWN_NOTICE} showIcon style={{ marginBottom: 12 }} />}
       {error && <Alert type="error" title={error} showIcon style={{ marginBottom: 12 }} />}
       {resetting ? (
         <Form layout="vertical" onFinish={reset} requiredMark={false}>

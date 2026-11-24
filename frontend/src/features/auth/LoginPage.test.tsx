@@ -2,13 +2,15 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiClientError } from '../../shared/api/ApiClientError'
+import { pingServer, waitForServer } from '../../shared/api/serverWake'
 import { changePassword, completePasswordReset } from './api'
 import { useAuth } from './AuthProvider'
-import { LoginPage } from './LoginPage'
+import { LoginPage, SERVER_DOWN_NOTICE, SLOW_SERVER_NOTICE, WAKING_NOTICE } from './LoginPage'
 import { PasswordChangeModal } from './PasswordChangeModal'
 
 vi.mock('./api', () => ({ completePasswordReset: vi.fn(), changePassword: vi.fn() }))
 vi.mock('./AuthProvider', () => ({ useAuth: vi.fn() }))
+vi.mock('../../shared/api/serverWake', () => ({ pingServer: vi.fn(), waitForServer: vi.fn() }))
 
 const fill = (label: string, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } })
 
@@ -16,8 +18,60 @@ describe('LoginPage (Phase 11-4-B)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(useAuth).mockReturnValue({ user: null, loading: false, notice: null, login: vi.fn(), logout: vi.fn() })
+    vi.mocked(pingServer).mockResolvedValue(true)
+    vi.mocked(waitForServer).mockResolvedValue(true)
   })
   afterEach(() => cleanup())
+
+  const signIn = () => {
+    fill('이메일', 'teacher@example.invalid')
+    fill('비밀번호', 'correct horse battery staple')
+    fireEvent.click(screen.getByText('로그인', { selector: 'button span' }))
+  }
+
+  it('wakes a sleeping server and logs in once it answers', async () => {
+    const login = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useAuth).mockReturnValue({ user: null, loading: false, notice: null, login, logout: vi.fn() })
+    vi.mocked(pingServer).mockResolvedValue(false)
+    let wake: (up: boolean) => void = () => {}
+    vi.mocked(waitForServer).mockReturnValue(new Promise((resolve) => { wake = resolve }))
+    render(<MemoryRouter><LoginPage /></MemoryRouter>)
+    expect(await screen.findByText(WAKING_NOTICE)).toBeInTheDocument()
+    signIn()
+    await waitFor(() => expect(waitForServer).toHaveBeenCalledTimes(2))
+    expect(login).not.toHaveBeenCalled()
+    wake(true)
+    await waitFor(() => expect(login).toHaveBeenCalledTimes(1))
+    expect(login).toHaveBeenCalledWith('teacher@example.invalid', 'correct horse battery staple')
+    expect(screen.queryByText(WAKING_NOTICE)).not.toBeInTheDocument()
+  })
+
+  it('does not send the login when the server never wakes', async () => {
+    const login = vi.fn()
+    vi.mocked(useAuth).mockReturnValue({ user: null, loading: false, notice: null, login, logout: vi.fn() })
+    vi.mocked(pingServer).mockResolvedValue(false)
+    vi.mocked(waitForServer).mockResolvedValue(false)
+    render(<MemoryRouter><LoginPage /></MemoryRouter>)
+    expect(await screen.findByText(SERVER_DOWN_NOTICE)).toBeInTheDocument()
+    signIn()
+    await waitFor(() => expect(waitForServer).toHaveBeenCalledTimes(2))
+    expect(login).not.toHaveBeenCalled()
+  })
+
+  it('does not retry a login that timed out and re-checks the server next time', async () => {
+    const login = vi.fn().mockRejectedValue(new ApiClientError('백엔드 API에 연결할 수 없습니다.', 'NETWORK_ERROR'))
+    vi.mocked(useAuth).mockReturnValue({ user: null, loading: false, notice: null, login, logout: vi.fn() })
+    render(<MemoryRouter><LoginPage /></MemoryRouter>)
+    await waitFor(() => expect(pingServer).toHaveBeenCalled())
+    await new Promise((resolve) => setTimeout(resolve, 0)) // let the ping result settle to 'ready'
+    signIn()
+    expect(await screen.findByText(SLOW_SERVER_NOTICE)).toBeInTheDocument()
+    expect(login).toHaveBeenCalledTimes(1)
+    expect(waitForServer).not.toHaveBeenCalled()
+    signIn()
+    await waitFor(() => expect(login).toHaveBeenCalledTimes(2))
+    expect(waitForServer).toHaveBeenCalledTimes(1)
+  })
 
   it('says why the server ended the session', () => {
     vi.mocked(useAuth).mockReturnValue({ user: null, loading: false, notice: '오랫동안 사용하지 않아 로그아웃되었습니다. 다시 로그인해주세요.', login: vi.fn(), logout: vi.fn() })
