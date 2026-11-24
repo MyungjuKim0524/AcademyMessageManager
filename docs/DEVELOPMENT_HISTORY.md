@@ -1,13 +1,13 @@
 # Academy LearningOps — Development History & Architecture
 
-작성일: 2026-11-10 · **최종 갱신: 2026-11-21 (Phase 11-4 완료 시점 기준, Java 릴리스 비교 추가)**  
+작성일: 2026-11-10 · **최종 갱신: 2026-11-25 (11-5 클라우드 배포·배포 후 점검 반영)**  
 근거 기준:
 - 현재 저장소의 소스·설정·Alembic 마이그레이션, `docs/` Phase 보고서와 `docs/reviews/` 결과 문서
 - 기존 Java 저장소(GitHub `AcademyMessageManager`)의 태그 `v1.0-legacy`·`v1.1.0`·`v1.2.0`. 태그 시점의 코드를 직접 읽어 확인했고, 릴리스 설명만으로 구현을 단정하지 않았다.
 
 > 이 문서는 검증된 사실, 기존 보고서의 과거 결과, 향후 제안을 구분한다.
 > - **Java 버전**: 기존 저장소의 커밋·태그로 순서와 날짜를 확인할 수 있다(2절).
-> - **웹 버전(Phase 1~11)**: 이 저장소에는 아직 커밋이 없어, 날짜와 순서는 각 Phase 보고서의 작성일을 근거로 한다.
+> - **웹 버전(Phase 1~11)**: v2.0.0 이전 작업(Phase 1~11-4)은 커밋 하나(`ca15e62`, 태그 `v2.0.0`, 2026-11-21)로 올라가 있어, 그 안의 날짜와 순서는 각 Phase 보고서의 작성일을 근거로 한다. 그 이후 변경은 `main`의 커밋 이력으로 확인할 수 있다.
 
 ## 1. Project Overview
 
@@ -184,7 +184,7 @@ Java 경로(Swing / Java HttpServer → service → port → JDBC → PostgreSQL
   - 반 학생 목록 절단(M3), 레거시 의존(M4), '진행된 수업' 규칙 공통화(B-2)
 - (`docs/phase10-learning-analytics.md`, `docs/reviews/phase10_5_*.md`)
 
-### Phase 11 — 통합·업무 개선·보안·정합성·릴리스 준비 (2026-11-20 ~ 11-21, 배포 단계 11-5 진행 중)
+### Phase 11 — 통합·업무 개선·보안·정합성·릴리스 준비·배포 (2026-11-20 ~ 11-24, 2026-11-24 배포 완료)
 - **11-0**: 통합 테스트 스크립트의 컨테이너 라벨·포트 검사 결함 수정(PS 5.1에서 검사를 건너뛰던 문제). (`docs/reviews/phase11_0_test_guard_fix.md`)
 - **업무 개선**(사용자 요청):
   - 반 단위 일괄 검토·확정·모의 발송(`docs/phase11-batch-review.md`)
@@ -243,6 +243,13 @@ Java 경로(Swing / Java HttpServer → service → port → JDBC → PostgreSQL
   - 배경: 결석·인정결석 학생도 설계대로 초안이 만들어지는데, 전체 선택으로 함께 확정·발송될 수 있었다.
   - 전체 선택은 결석·인정결석 메시지를 빼고 선택하고, 확정 확인창에 포함된 결석·인정결석 건수를 표시한다. 직접 체크하면 지금처럼 확정·발송할 수 있다.
   - 초안 생성·확정·발송 규칙, API, DB는 바꾸지 않았다(`docs/phase11-batch-review.md` 동작 2).
+- **11-5 클라우드 배포**(2026-11-24, 사용자 수행)
+  - 서비스: https://academy-message-manager.vercel.app — Vercel(React) · Render(FastAPI) · Neon(PostgreSQL). 운영 DB에는 시연용 가상 데이터만 있다.
+  - 배포 후 점검(2026-11-25 확인, `docs/reviews/phase11_4_release_readiness.md` 12절, 배포 가이드 6·8절):
+    - 확인: Render 기동·환경변수(R1), Neon 연결(R2, Direct connection), 워커·인스턴스 1개(R4), 세션 쿠키 속성, API 문서 비공개(Render 주소의 `/openapi.json`·`/docs` 404, `ACADEMY_API_DOCS` 없음), 진단 엔드포인트 꺼짐
+    - 로그인 제한(R3): **구성 A′**(비밀 헤더 없음, `cf-connecting-ip`)로 운영한다. Render 환경변수로 확인했고, 진단 엔드포인트 실측(`source`, `CF-Connecting-IP` 도착)은 하지 않았다. Vercel 송신 주소 단위로 묶이는 위험(배포 가이드 3절)은 가상 데이터 전용 시연 서비스이고 재시작으로 즉시 해제되므로 수용했다.
+    - 생략·미확인: 플랫폼 로그의 쿼리 문자열(R5)은 가상 데이터만 있어 생략, 무료 플랜 유휴 정지(R6)는 측정하지 않았다.
+  - 발견: 없는 경로의 404 응답 본문이 `INTERNAL_ERROR`("요청 처리 중 오류가 발생했습니다.")다(`backend/app/main.py`의 `http_error_handler`). 상태 코드는 404라 노출은 없다. 정정은 7절 미완료 항목.
 
 ## 4. Database Architecture
 
@@ -358,12 +365,13 @@ Java 경로(Swing / Java HttpServer → service → port → JDBC → PostgreSQL
 - 출결·성적 분석, 관심 필요 학생, 학생 학습 리포트, 대시보드 할 일
 - Phase 11-2 보안 수정(SEC-01·02·03·06·07·08·09·11), Phase 11-3 정합성 수정(INT-01~04)
 - Phase 11-4: 성능·예외 처리(A), 운영 실행 모드(SEC-04)·유휴 만료(SEC-05)·비밀번호 변경·재설정(SEC-10)(B), 회귀·릴리스 준비(C)
-- 배포 보안 설정 가이드 확정본, GitHub 업로드 전 점검(11-5 Step 1). 배포·업로드 자체는 아직 안 했다.
+- 배포 보안 설정 가이드 확정본, GitHub 업로드 전 점검(11-5 Step 1), v2.0.0 GitHub 업로드(2026-11-21)
+- 클라우드 배포(2026-11-24): Vercel · Render · Neon. 배포 후 점검 결과는 3절 Phase 11 "11-5 클라우드 배포"
 - 개발 DB를 head(011)로 갱신(2026-11-21, 백업 후)
 
 ### 부분 완료 또는 검증 필요
 
-- 실제 클라우드(Render·Vercel·Neon) 기동·연결: 로컬 모의 검증만 했다(`docs/reviews/phase11_4_release_readiness.md` 12절).
+- 배포 후 점검 중 미확인: 로그인 제한 구성 A′의 진단 엔드포인트 실측(R3, 환경변수로만 확인), 무료 플랜 유휴 정지 측정(R6). R5는 가상 데이터 전용이라 생략(`docs/reviews/phase11_4_release_readiness.md` 12절).
 - Java 레거시: 이 저장소에 포함하지 않는다. Migration 010(`import_*` 삭제) 이후 Java 테스트를 다시 실행한 기록은 없다.
 - 빈 PostgreSQL 17 일회용 DB에서 001→011 전체 재구성 검증 완료(2026-11-23, Phase 11-5-B). `011_staff_deleted_status` head, `btree_gist`, FK·UNIQUE·CHECK·Trigger와 Seed 멱등성·부분 복구를 확인했다.
 - 개발 DB 불변조건 점검: 미실행(사용자 보류). revision은 2026-11-21에 확인했다.
@@ -377,6 +385,7 @@ Java 경로(Swing / Java HttpServer → service → port → JDBC → PostgreSQL
 - 실제 발송 채널과 발송 트랜잭션 분리(INT-I1), 발송 이력 전용 화면
 - CI/CD, 운영 모니터링, 백업·복구 자동화
 - Kafka 이벤트(보류)
+- 없는 경로의 404 응답 오류 코드 정정(`INTERNAL_ERROR` → 404에 맞는 코드, 2026-11-25 발견, 별도 처리)
 
 ## 8. Future Roadmap
 
@@ -385,7 +394,7 @@ Java 경로(Swing / Java HttpServer → service → port → JDBC → PostgreSQL
 | 단계 | 작업 | 근거 |
 |---|---|---|
 | ~~Phase 11-4~~ 완료 | 운영 실행 모드(SEC-04), 유휴 만료(SEC-05), 비밀번호 변경·재설정(SEC-10), 기존 React 실패 테스트 수정 | `phase11_4_b_runtime_account_results.md`, `phase11_4_release_readiness.md` |
-| Phase 11-5 | 첫 커밋·GitHub 업로드(사용자 승인 후), 사용자가 직접 수행하는 배포(Neon + Render + Vercel)와 배포 직후 진단 절차, CI에 pip-audit·npm audit 추가 | `deployment/phase11_5_security_deployment_guide.md`, `deployment/phase11_5_a_neon_guide.md`, `phase11_4_release_readiness.md` 7~11절 |
+| ~~Phase 11-5~~ 배포 완료(2026-11-24) | GitHub 업로드(2026-11-21), 사용자가 직접 수행한 배포(Neon + Render + Vercel)와 배포 직후 점검(미확인 항목은 7절). **남은 것**: CI에 pip-audit·npm audit 추가 | `deployment/phase11_5_security_deployment_guide.md`, `deployment/phase11_5_a_neon_guide.md`, `phase11_4_release_readiness.md` 7~11절 |
 | 배포 이후 | 보강 신청 관리 웹 이식 여부 결정. 현재 릴리스에는 넣지 않고, 업무 안정화·배포 후 필요성과 구현 비용을 검토한다 | 9.9절, `ENGINEERING_RETROSPECTIVE.md` 9절 |
 | 미정(범위·일정 미정) | **AI 기능 추가 검토**. FastAPI(Python)를 고른 이유 중 하나로, 학원 업무 자동화에 AI 기능을 더하는 방향이다. 구체 기능·데이터·개인정보 처리 방식은 정해지지 않았고, 현재 코드에 AI 기능은 없다 | `ENGINEERING_RETROSPECTIVE.md` 1절 |
 | 미정 | 개발 DB 불변조건 읽기 전용 점검(승인 시). 빈 DB 001→011 재구성은 Phase 11-5-B에서 완료 | `phase11_3_integrity_remediation.md` 12~13절 |
@@ -515,7 +524,7 @@ MMS는 이미지 등 멀티미디어 발송 요구사항이 확인될 때만 추
   - 계약 비교: Phase 1 7/7, Phase 2 27/27
   - production 모드 기동·거부 subprocess 테스트(11-4-B)
   - `npm run build` PASS
-  - **실제 클라우드 배포는 아직 안 했다**(Phase 11-5)
+  - 클라우드 배포 완료(2026-11-24, Vercel · Render · Neon). 배포 후 점검 결과는 3절 Phase 11
 - **Trade-off**:
   - 언어를 바꾸면서 Java 구현을 직접 재사용할 수 없어, API·인증·데이터 접근 계층을 Python으로 다시 구현하고 검증해야 했다(9.0 대응표).
   - 여러 사용자가 브라우저로 접근할 수 있게 된 대신, 데스크톱에는 없던 일이 생겼다.
@@ -556,9 +565,9 @@ MMS는 이미지 등 멀티미디어 발송 요구사항이 확인될 때만 추
   - v1.2: `PostgreSqlDaoIntegrationTest` 2건(환경변수로 켜야 실행)
   - 웹: 스키마·제약 통합 테스트와 Migration 왕복 테스트(일부 구간)가 PostgreSQL 141건에 포함
   - 테스트 DB에서 `alembic check` 차이 없음(11-3-A)
+  - 빈 PostgreSQL 17 일회용 DB에서 001→011 전체 재구성 검증(2026-11-23, Phase 11-5-B, 7절 기록. 별도 결과 보고서는 없음)
 - **Trade-off**:
   - 실제 Oracle 데이터를 옮긴 실행 기록은 **확인되지 않는다**.
-  - 빈 DB에서 001→011 전체를 재구성하는 검증은 아직 안 했다.
   - Java 전용 메시지 테이블 4개가 스키마에 남아 있지만 웹은 쓰지 않는다.
   - 개발 DB는 자동 적용하지 않는 원칙이라, 적용이 늦어질 수 있다. 실제로 011이 늦게 적용됐다(2026-11-21, 4절).
 
@@ -697,7 +706,7 @@ MMS는 이미지 등 멀티미디어 발송 요구사항이 확인될 때만 추
 
 - 주요 근거: `README.md`, `backend/README.md`, `docs/phase*-*.md`, `docs/reviews/*.md`, `docs/deployment/*.md`, 실제 소스·설정·마이그레이션
 - Java 이력: 기존 저장소 태그 `v1.0-legacy`·`v1.1.0`·`v1.2.0`의 코드를 `git show`/`git ls-tree`로 직접 확인했다(2·9절). 태그 이후의 Java REST 어댑터 단계는 로컬 사본과 `docs/fastapi-transition-baseline.md`가 근거다.
-- 웹 버전의 Git 이력: 이 저장소에는 아직 커밋이 없다. Phase 순서와 날짜는 보고서 작성일을 근거로 한다.
+- 웹 버전의 Git 이력: v2.0.0 이전 작업은 커밋 하나(`ca15e62`, 2026-11-21)라서 Phase 순서와 날짜는 보고서 작성일을 근거로 한다. 그 이후 변경은 커밋 이력으로 확인할 수 있다.
 - 테스트 결과: 6절 표의 시점에 실제로 실행한 결과다.
 - 개발 DB: 2026-11-21 Migration 011을 적용할 때 읽기 전용 세션으로 revision·제약·직원 수만 조회했다.
 - 개발자의 개인적 동기나 감정: 문서에 창작하지 않음

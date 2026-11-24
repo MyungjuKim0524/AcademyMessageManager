@@ -5,6 +5,8 @@ Java Swing 데스크톱 프로그램(v1.x)을 **FastAPI + React + PostgreSQL** �
 
 > 학부모 메시지 발송은 **모의 발송(Mock)** 입니다. 실제 문자·이메일은 보내지 않습니다.
 
+저장소 이름 AcademyMessageManager는 v1.x(Java) 시절 이름이며, v2.0.0부터 Academy LearningOps로 바뀌었습니다.
+
 ## 배경
 
 학원은 수업마다 출결·과제·시험 결과를 정리해 학부모에게 학습 현황을 안내해야 합니다.
@@ -123,18 +125,23 @@ DB 컨테이너 준비, 환경변수, 데이터 위치 정책 등 자세한 절�
 .\scripts\verify-all.ps1        # Ruff → pytest → lint → Vitest → build (DB 불필요)
 ```
 
-| 범위 | 결과(2026-11-21) |
-|---|---|
-| 백엔드 DB 없는 테스트 | 117개 실행 · 통과 |
-| PostgreSQL 통합 테스트(격리 테스트 DB) | 141개 실행 · 통과 |
-| 프론트엔드 Vitest | 113개 실행 · 통과 |
+| 범위 | 결과 | 실행일 |
+|---|---|---|
+| 백엔드 DB 없는 테스트 | 165개 실행 · 통과 | 2026-11-25 |
+| PostgreSQL 통합 테스트(격리 테스트 DB) | 141개 실행 · 통과 | 2026-11-21 |
+| 프론트엔드 Vitest | 114개 실행 · 통과 | 2026-11-25 |
 
 - 수치는 **실행해서 통과한 테스트 수**이며, 커버리지는 측정하지 않았습니다.
 - 통합 테스트는 격리된 테스트 DB에서만 실행됩니다([개발 가이드 4절](docs/DEVELOPMENT_GUIDE.md#4-테스트)).
 
 ## 배포
 
-아직 배포하지 않았습니다(Phase 11-5 예정, Neon · Render · Vercel).
+2026-11-24에 배포를 완료했습니다: **https://academy-message-manager.vercel.app**
+- 구성: Vercel(React) · Render(FastAPI) · Neon(PostgreSQL). Vercel이 `/api` 요청을 Render로 전달합니다(`frontend/vercel.json`).
+- 직원 계정으로 로그인해야 쓸 수 있습니다.
+- 운영 DB에는 시연용 가상 데이터만 있습니다.
+- 배포 후 점검: Render 기동·환경변수, Neon 연결, 워커·인스턴스 1개, 세션 쿠키 속성, API 문서 비공개를 확인했습니다.
+  로그인 시도 제한은 구성 A′(Vercel 송신 주소 단위)로 운영합니다. 무료 플랜 유휴 정지는 아직 측정하지 않았습니다. 자세한 결과는 [Development History 3절 Phase 11](docs/DEVELOPMENT_HISTORY.md)에 있습니다.
 - 배포 실행 모드(`ACADEMY_DB_MODE=production`)는 시작할 때 설정을 검증하고, 안전하지 않으면 시작을 거부합니다.
 - 절차: [보안 배포 설정 가이드](docs/deployment/phase11_5_security_deployment_guide.md), [릴리스 준비도·배포 인계](docs/reviews/phase11_4_release_readiness.md)
 
