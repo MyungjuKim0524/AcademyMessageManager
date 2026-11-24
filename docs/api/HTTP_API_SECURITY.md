@@ -1,5 +1,8 @@
 # Local HTTP API Security Model
 
+> **(2026-11-24) 이전 기록**: Java v1.x의 localhost HTTP 어댑터 시점의 보안 모델이다. 본문의 "인증은 범위 밖", Jackson·`ApiRoutes`·Import parser 통제는 그 시점의 내용이다.
+> 현재 웹 버전(v2.0.0)은 직원 세션 인증·CSRF·RBAC를 갖췄다. [ADR 0001](../decisions/0001-local-session-authentication.md), [Phase 11-2 보안 감사](../reviews/phase11_2_security_audit.md), [보안 배포 설정 가이드](../deployment/phase11_5_security_deployment_guide.md)를 본다.
+
 ## Scope
 
 이 API는 React/Vue 개발 서버와 현재 Java 애플리케이션을 연결하는 localhost 전용 어댑터다. 실제 이메일 발송, 인증, 외부 네트워크 공개는 이번 범위에 포함하지 않는다.

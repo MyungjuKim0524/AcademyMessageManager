@@ -1,5 +1,8 @@
 # Import Confirm
 
+> **(2026-11-24) 이전 기록**: `POST /api/imports/confirm`은 Phase 9.6에서 구 CSV/XLSX 가져오기와 함께 삭제되었다. `import_*` 테이블은 Alembic `010_drop_legacy_import_tables`로 삭제되었다.
+> 현재 엑셀 업로드 확정은 `POST /api/lesson-uploads/confirm`(`backend/app/modules/lesson_upload/`)이다. 아래 내용은 Java v1.x 시절의 기록으로 남겨 둔다.
+
 `POST /api/imports/confirm`은 Preview 응답을 받지 않고 원본 CSV/XLSX와 UUID `Idempotency-Key`만 받습니다. Preview와 동일한 Parser/Validator를 다시 실행한 뒤 하나의 JDBC Connection에서 데이터 변경, 행별 결정 Audit, 성공 Summary를 함께 commit합니다.
 
 - 학생 업무 키: 기존 Swing 로직과 같은 `name + school_name`
