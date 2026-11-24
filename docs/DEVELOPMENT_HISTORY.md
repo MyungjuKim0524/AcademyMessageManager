@@ -1,6 +1,6 @@
 # Academy LearningOps — Development History & Architecture
 
-작성일: 2026-11-10 · **최종 갱신: 2026-11-25 (11-5 클라우드 배포·배포 후 점검 반영)**  
+작성일: 2026-11-10 · **최종 갱신: 2026-11-25 (배포 후 점검, 서버 깨우기, 문서 정리 반영)**  
 근거 기준:
 - 현재 저장소의 소스·설정·Alembic 마이그레이션, `docs/` Phase 보고서와 `docs/reviews/` 결과 문서
 - 기존 Java 저장소(GitHub `AcademyMessageManager`)의 태그 `v1.0-legacy`·`v1.1.0`·`v1.2.0`. 태그 시점의 코드를 직접 읽어 확인했고, 릴리스 설명만으로 구현을 단정하지 않았다.
@@ -74,6 +74,7 @@ React 메뉴(`frontend/src/layout/AppLayout.tsx`):
 ### Java 릴리스별 발전 과정 (기존 저장소 태그 기준)
 
 아래 수치는 각 태그의 파일을 `git ls-tree`/`git show`로 직접 센 값이다. 경로는 기존 저장소 기준이다.
+태그: [`v1.0-legacy`](https://github.com/MyungjuKim0524/AcademyMessageManager/tree/v1.0-legacy) · [`v1.1.0`](https://github.com/MyungjuKim0524/AcademyMessageManager/tree/v1.1.0) · [`v1.2.0`](https://github.com/MyungjuKim0524/AcademyMessageManager/tree/v1.2.0) · [`v2.0.0`](https://github.com/MyungjuKim0524/AcademyMessageManager/tree/v2.0.0)
 
 | 버전 | 날짜 | 구조 | DB·접근 | 발송 | 테스트 |
 |---|---|---|---|---|---|
@@ -228,11 +229,7 @@ Java 경로(Swing / Java HttpServer → service → port → JDBC → PostgreSQL
   - 원인: `scripts/start-fastapi.ps1`의 사전 점검이 "head 011 미적용(현재 010)"으로 실행을 막았다. 011은 그동안 테스트 DB에만 적용되어 있었다.
   - 처리: 백업(`data/backups/academy_learningops_dev_before_011_20261121.dump`, Git 제외)을 만든 뒤 `scripts/migrate-dev-db.ps1`로 개발 DB에만 적용했다.
   - 확인: revision 011, 직원 데이터 변화 없음, 사전 점검 통과
-- **화면 문구·배치 조정**(2026-11-21, 사용자 요청, 프론트엔드 전용)
-  - 보호자 이메일 수정 버튼·링크·열 제목·창 제목을 "메일 주소 변경"으로 통일했다. 대상 화면은 전체 학생, 반별 학생, 메시지 처리 현황, 누락·예외 생성이다.
-  - 반별 학생 표: "메일 주소 변경" 열을 "휴원 관리" 앞으로 옮겼다.
-  - 직원 목록 계정 관리 버튼 순서: 이름 수정 → 재설정 코드 → 비활성화 → 삭제
-  - 출결 분석: "기록 완료율"을 "출결 입력 완료율"로, 보조 문구를 "입력 n / 대상 m"으로 바꿨다. 계산식(`record_rate`)은 그대로다.
+- **화면 문구·배치 조정**(2026-11-21, 사용자 요청, 프론트엔드 전용): 보호자 이메일 수정 기능 이름을 "메일 주소 변경"으로 통일하고, 출결 분석의 "기록 완료율"을 "출결 입력 완료율"로 바꿨다(계산식 `record_rate`는 그대로). 그 밖에 표 열·버튼 순서만 조정했다.
 
 - **v2.0.0 업로드 후 문서 정비**(2026-11-21~22)
   - v2.0.0: 커밋 `ca15e62`와 태그 `v2.0.0`을 GitHub `main`에 일반 Push했다(기존 이력·태그 보존).
@@ -251,6 +248,7 @@ Java 경로(Swing / Java HttpServer → service → port → JDBC → PostgreSQL
     - 생략·미확인: 플랫폼 로그의 쿼리 문자열(R5)은 가상 데이터만 있어 생략, 무료 플랜 유휴 정지(R6)는 측정하지 않았다.
   - 발견: 없는 경로의 404 응답 본문이 `INTERNAL_ERROR`("요청 처리 중 오류가 발생했습니다.")다(`backend/app/main.py`의 `http_error_handler`). 상태 코드는 404라 노출은 없다.
   - 수정(2026-11-25): 404는 `NOT_FOUND`("요청한 기능을 사용할 수 없습니다.")로 응답한다(`http_error_handler`). 회귀 테스트 `backend/tests/test_api.py::test_unknown_path_is_a_plain_not_found`.
+  - 서버 깨우기(2026-11-25, 커밋 `1dc2db6`, 프론트엔드 전용): Render 무료 인스턴스가 유휴 후 잠들면 첫 로그인이 요청 시간 초과로 실패했다. 로그인 화면이 먼저 `/api/health`로 서버를 깨우고(최대 90초 대기) 응답 뒤에 로그인·재설정 요청을 보낸다. 시간 초과된 로그인은 자동 재시도하지 않는다(`frontend/src/shared/api/serverWake.ts`).
 
 ## 4. Database Architecture
 
@@ -325,7 +323,7 @@ Java 경로(Swing / Java HttpServer → service → port → JDBC → PostgreSQL
 | API 문서·HSTS | 설정 제어 | `ACADEMY_API_DOCS`(기본 꺼짐), `ACADEMY_HSTS_MAX_AGE`(기본 0) |
 | 데이터 정합성·동시성 | 구현 | 4절. Phase 11-3 감사·수정 |
 | 의존성 취약점 | 수동 검사 | pip-audit(PyPI·OSV) 0건, npm audit 0건(2026-11-20 패치 후). CI 자동화는 미구현 |
-| 운영 실행 모드 | 구현(11-4-B), **클라우드 미검증** | `ACADEMY_DB_MODE=production`. 시작 시 설정을 검증하고, 위반하면 시작을 거부한다(설정 이름만 보고). development/test는 기존처럼 루프백·고정 DB만 허용 |
+| 운영 실행 모드 | 구현(11-4-B), 배포 환경에서 사용 중 | `ACADEMY_DB_MODE=production`(Render 배포, 배포 후 점검은 3절 Phase 11 "11-5 클라우드 배포"). 시작 시 설정을 검증하고, 위반하면 시작을 거부한다(설정 이름만 보고). development/test는 기존처럼 루프백·고정 DB만 허용 |
 | 유휴 세션 만료, 비밀번호 변경·재설정 | 구현(11-4-B) | 유휴 60분(서버 판정, 최대 약 1분 일찍 만료 가능), 비밀번호 변경, 관리자 발급 일회용 재설정 코드(메모리 저장 → 워커 1 전제) |
 | 실제 외부 발송 | 미구현 | 모의 발송만. 연동 전 트랜잭션 분리 필요(INT-I1, 8절) |
 
@@ -346,7 +344,7 @@ Java 경로(Swing / Java HttpServer → service → port → JDBC → PostgreSQL
 | `pytest -m "not postgres"` | 166 실행 · 166 PASS | 2026-11-25 (404 응답 수정 후) |
 | `pytest -m postgres`(격리 테스트 DB, 전체) | 141 PASS, 0 FAIL, 0 SKIP | 2026-11-21 (11-4-B 최종 백엔드 변경 후, 사용자 승인 하 전체 회귀) |
 | `pytest -m postgres`(비파괴: 11-3 동시성·11-4-A·11-4-B) | 36 PASS | 2026-11-21 (11-4-C) |
-| `vitest run`(전체) | 15 파일 · 114 실행 · 114 PASS / 0 FAIL | 2026-11-25 (`verify-all.ps1`) |
+| `vitest run`(전체) | 16 파일 · 121 실행 · 121 PASS / 0 FAIL | 2026-11-25 (`1dc2db6` 서버 깨우기 기능 추가 후 `npm test`. 그 전 실행은 15 파일 · 114 PASS) |
 | `tsc -b`, `oxlint`, `npm run build` | PASS | 2026-11-25 (`verify-all.ps1`) |
 | `pip-audit`, `npm audit` | 알려진 취약점 0 | 2026-11-20 (Phase 11-2-B-2) |
 | `mvn test`(Java) | 48 PASS(마지막 기록) | Phase 9 — 이후 미재실행. Java는 이 저장소에 없다 |
@@ -484,7 +482,7 @@ MMS는 이미지 등 멀티미디어 발송 요구사항이 확인될 때만 추
 - 재현하지 않은 문제는 **(추정)**, 근거 문서가 없는 결정 이유는 **(기록 없음)**으로 표시한다.
   - FastAPI 선택 이유와 보강 관리 누락 원인은 2026-11-21 개발자 회고(`docs/ENGINEERING_RETROSPECTIVE.md` 1·9절)로 채웠다. 현재 "(기록 없음)" 항목은 없다.
 - Java 경로는 기존 저장소 태그 기준이다.
-- 웹 버전 테스트 수치는 **실행해서 통과한 테스트 수**다. 백엔드 DB 없는 테스트 166, PostgreSQL 통합 141, Vitest 15파일 114다(실행일은 9.8절 표). 정의된 개수·실행 결과·커버리지를 어떻게 구분했는지는 9.8절에 있다.
+- 웹 버전 테스트 수치는 **실행해서 통과한 테스트 수**다. 백엔드 DB 없는 테스트 166, PostgreSQL 통합 141, Vitest 16파일 121이다(실행일은 9.8절 표). 정의된 개수·실행 결과·커버리지를 어떻게 구분했는지는 9.8절에 있다.
 
 ### 9.0 구현 대응표
 
@@ -647,7 +645,7 @@ MMS는 이미지 등 멀티미디어 발송 요구사항이 확인될 때만 추
   - 멱등성: `Idempotency-Key` UNIQUE(`uq_notification_send_attempt_key`), 메시지당 성공 1회 부분 UNIQUE(`uq_notification_send_attempt_success`)
   - 원본이 바뀌면 확정·발송 차단(`source_hash`), 발송 전 원본 행을 고정 순서로 잠금(INT-01)
   - 반 단위 일괄 검토·확정·모의 발송
-- **Validation**: 메시지·운영·동시성 통합 테스트(PostgreSQL 141건에 포함). 동시 확정·발송·재시도 경합은 `backend/tests/test_phase113_concurrency_integration.py` 15건.
+- **Validation**: 메시지·운영·동시성 통합 테스트(PostgreSQL 141건에 포함). 동시 확정·발송·재시도 경합은 `backend/tests/test_phase113_concurrency_integration.py`(테스트 함수 15개, 매개변수화로 펼친 실행 항목 23개).
 - **Trade-off**:
   - **실제 발송 능력은 Java보다 줄었다**. 웹은 학부모에게 아무것도 보내지 않는다.
   - 실발송을 도입하려면 INT-I1(아웃박스 등)과 채널 추상화가 먼저 필요하다. 지금은 `NotificationService`가 `MockSender`를 직접 생성한다.
@@ -679,7 +677,7 @@ MMS는 이미지 등 멀티미디어 발송 요구사항이 확인될 때만 추
   |---|---|---|
   | **166** | 백엔드 DB 없는 테스트(`pytest -m "not postgres"`) 166개 실행, 166 PASS | 2026-11-25 |
   | **141** | 백엔드 PostgreSQL 통합 테스트(`pytest -m postgres`, 격리 테스트 DB) 141개 실행, 141 PASS / 0 FAIL / 0 SKIP | 2026-11-21, 11-4-B 최종 백엔드 변경 뒤 전체 회귀. 이후 앱 코드 변경은 404 응답 처리(2026-11-25, DB와 무관한 라우팅 오류 처리기)뿐이고 PostgreSQL 테스트는 재실행하지 않았다. 개수 141은 2026-11-25에도 같다 |
-  | **114** | 프론트엔드 Vitest 테스트 114개(15개 파일) 실행, 114 PASS | 2026-11-25, 6절 표 참고 |
+  | **121** | 프론트엔드 Vitest 테스트 121개(16개 파일) 실행, 121 PASS | 2026-11-25, 6절 표 참고 |
 
   - pytest 수치는 **테스트 항목** 기준이다. 테스트 함수 229개 중 `@pytest.mark.parametrize`(18곳)로 펼쳐진 경우를 각각 1개로 센다. 백엔드 합계는 307개(= 166 + 141)다(2026-11-25 기준).
   - 그래서 Java의 `@Test` 개수와 셈의 단위가 같지 않다. 버전 간 숫자를 직접 비교해 "몇 배 늘었다"고 말하지 않는다.
