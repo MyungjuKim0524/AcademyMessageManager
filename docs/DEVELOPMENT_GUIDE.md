@@ -33,6 +33,23 @@ PostgreSQL은 서로 분리된 두 컨테이너를 쓴다(`compose.postgres-test
 | 개발 | `academy-learningops-postgres-dev` | `127.0.0.1:55431` | `academy_learningops_dev` / `academy_dev` | 금지 |
 | 테스트 | `academy-learningops-postgres-test` | `127.0.0.1:55432` | `academy_learningops_test` / `academy_test` | 허용 |
 
+처음 한 번은 의존성을 설치하고 두 컨테이너를 만든다(저장소 루트 기준).
+
+```powershell
+# 의존성
+cd backend; python -m venv .venv; .\.venv\Scripts\python.exe -m pip install -e ".[dev]"; cd ..
+cd frontend; npm ci; cd ..
+
+# DB 컨테이너: compose 파일이 두 비밀번호를 모두 요구한다. 값은 현재 세션에만 둔다.
+$env:ACADEMY_DEV_DB_PASSWORD = '<로컬 개발 DB 비밀번호>'
+$env:ACADEMY_TEST_DB_PASSWORD = '<다른 로컬 테스트 DB 비밀번호>'
+docker compose -f compose.postgres-test.yml up -d --wait
+Remove-Item Env:ACADEMY_DEV_DB_PASSWORD, Env:ACADEMY_TEST_DB_PASSWORD
+```
+
+- 컨테이너를 만든 뒤에는 아래 스크립트가 비밀번호를 컨테이너 설정에서 읽으므로 다시 입력하지 않는다.
+- 멈출 때는 `docker compose -f compose.postgres-test.yml stop`을 쓴다. `stop`은 볼륨을 지우지 않는다.
+
 ```powershell
 .\scripts\migrate-dev-db.ps1    # 개발 DB에 Alembic Migration 적용(사전 백업 권장)
 .\scripts\bootstrap-admin.ps1   # 최초 관리자 생성(ACADEMY_BOOTSTRAP_EMAIL·PASSWORD를 현재 세션에만 설정)

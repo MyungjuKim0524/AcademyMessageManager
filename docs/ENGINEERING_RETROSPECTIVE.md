@@ -2,10 +2,10 @@
 
 작성일: 2026-11-10
 
-> 이 회고는 코드와 검증 결과에서 확인할 수 있는 엔지니어링 판단만 다룬다. 개발자의 감정,
-> 개인적 동기, 당시 구두 의사결정은 확인할 수 없어 필요한 곳에 `개인 회고 보완 필요`로
-> 표시한다. 작성 당시 `.git`이 없어 commit 단위 회고는 검증할 수 없었다. 2026-11-21 기준 저장소는 초기화됐지만 커밋은 아직 없다.
-> Java 버전(v1.0~v1.2)과의 비교, 이후 Phase 11-4까지의 결과는 `DEVELOPMENT_HISTORY.md` 2·3·9절을 기준으로 한다.
+> 이 회고는 코드와 검증 결과에서 확인할 수 있는 엔지니어링 판단만 다룬다. 개발자의 감정과
+> 개인적 동기는 다루지 않는다. 1·9절의 "개발자 회고"만 개발자 본인이 작성했다(2026-11-21).
+> 1~7절은 2026-11-10(Phase 4 직후) 시점의 판단과 검증 기록이다. 당시 저장소에 Git 이력이 없어 commit 단위로는 검증할 수 없었다. 웹 버전은 2026-11-21 `v2.0.0` 커밋으로 올라갔고, 그 뒤 변경은 `main`의 커밋 이력에 있다.
+> Java 버전(v1.0~v1.2)과의 비교, 이후 결과와 현재 상태는 [`DEVELOPMENT_HISTORY.md`](DEVELOPMENT_HISTORY.md) 2·3·7·9절을 기준으로 한다.
 
 ## 1. Java에서 FastAPI로 전환한 기술적 의사결정
 
@@ -32,6 +32,8 @@ Message Preview부터 시작하고 Import Preview, DB API 순으로 위험을 �
 - Phase 1 계약 7/7, Phase 2 계약 27/27의 과거 실서버 비교 기록
 - 2026-11-10 기본 Python 테스트 33 PASS
 - Phase 4 성공 계약은 아직 `BLOCKED`
+
+근거: [Phase 1](archive/phases/phase1-fastapi-migration.md) · [Phase 2](archive/phases/phase2-import-preview-migration.md) · [FastAPI 전환 기준선](archive/phases/fastapi-transition-baseline.md)
 
 ### Lessons Learned
 
@@ -82,6 +84,10 @@ Java/Python PostgreSQL 통합 테스트에는 TRUNCATE, rollback, constraint vio
 2026-11-10 두 컨테이너는 Healthy였고 서로 다른 DB명·계정·volume을 사용했다. 양쪽 schema와
 Alembic revision은 같지만 개발 업무 데이터는 0행, 테스트 DB에는 합성 데이터 7행이었다.
 
+이후 2026-11-20(Phase 11-0)에 통합 테스트 실행기가 Windows PowerShell 5.1에서 라벨·포트 검사를 건너뛰던 결함을 찾아 고쳤다([phase11_0_test_guard_fix](reviews/phase11_0_test_guard_fix.md)).
+
+근거: [Phase 3](archive/phases/phase3-postgresql-infrastructure.md) · `compose.postgres-test.yml` · `backend/app/db/safety.py` · `scripts/run-postgres-integration.ps1`
+
 ### Lessons Learned
 
 “테스트 DB를 사용한다”는 환경변수 이름만으로 보장되지 않는다. 파괴적 테스트는 실행 직전에
@@ -108,7 +114,9 @@ framework 기본값보다 기존 공개 계약을 우선했다.
 ### Verification
 
 Phase 1·2 비교는 완료됐지만 Phase 4 성공 경로 비교는 Java API DB runtime 문제로 미완료다.
-따라서 Import Confirm 전체 호환 완료를 주장하지 않는다.
+따라서 Import Confirm 전체 호환 완료를 주장하지 않는다. 구 Import 기능은 이후 Phase 9.6에서 제거되었다([Development History 3절](DEVELOPMENT_HISTORY.md#3-development-timeline)).
+
+근거: [Phase 4](archive/phases/phase4-secure-import-migration.md) · [구 Java API 명세](api/openapi-java-v1-legacy.yaml) · 현재 공통 오류 처리 `backend/app/main.py`
 
 ### Lessons Learned
 
@@ -148,6 +156,8 @@ unique constraint와 결합했다.
 - React build PASS
 - React Vitest 현재 실행은 정지해 중단
 
+위 수치는 2026-11-10 기록이다. 현재 테스트 결과는 [Development History 6절](DEVELOPMENT_HISTORY.md#6-test--quality-assurance)을 본다. 같은 멱등 키·단일 트랜잭션 원칙은 이후 메시지 발송과 엑셀 확정에도 적용했고, 동시성 결함 수정은 [phase11_3_integrity_remediation](reviews/phase11_3_integrity_remediation.md)에 있다.
+
 ### Lessons Learned
 
 통합 테스트는 많을수록 좋은 것이 아니라 대상 DB를 증명한 뒤에만 실행되어야 한다. 과거의
@@ -184,6 +194,8 @@ Alembic revision을 확인했다.
 직접 원인과 최초 근본 원인을 분리해야 한다. socket 제거 실패는 증명됐지만 왜 socket이
 비정상이 됐는지는 확정하지 않았다. 불확실성을 남기는 것이 잘못된 단정이나 Factory Reset보다
 안전하다.
+
+근거: [DOCKER_TROUBLESHOOTING](troubleshooting/DOCKER_TROUBLESHOOTING.md) · 2026-11-15 재발 시 복구: [docker-desktop-safe-recovery](troubleshooting/docker-desktop-safe-recovery.md)
 
 ## 6. 보안을 고려한 문제 해결 방식
 
@@ -237,7 +249,9 @@ Definition of Done에 transaction, rollback, security boundary, test isolation, 
 ### Verification
 
 구현 여부와 운영 공개 가능성을 분리해 평가했다. History/Confirm 코드는 존재하지만 인증이
-없어 운영 공개 불가로 문서화했다.
+없어 운영 공개 불가로 문서화했다(2026-11-10 시점).
+
+이후 인증·RBAC는 Phase 5([ADR 0001](decisions/0001-local-session-authentication.md)), 배포 실행 모드와 시작 시 설정 검증은 Phase 11-4-B([phase11_4_b_runtime_account_results](reviews/phase11_4_b_runtime_account_results.md)), 배포 준비도 점검은 [phase11_4_release_readiness](reviews/phase11_4_release_readiness.md)에 있다.
 
 ### Lessons Learned
 
@@ -306,6 +320,4 @@ Java 버전(v1.0~v1.2)의 보강 관리 기능은 FastAPI·React 웹 버전으�
 인증/RBAC, Phase 4 최종 계약 검증, 현재 DB integration 재실행과 CI/CD는 아직 완료되지
 않았다. 이 경계를 숨기지 않는 것이 다음 단계의 가장 중요한 출발점이다.
 
-**개인 회고 보완 필요(일부 작성):** 기술 선택의 이유(1절)와, 다음 프로젝트에서 처음부터 다르게 할 선택(9절, Feature Parity 체크리스트)은 개발자 본인이 작성했다. 가장 어려웠던 판단과 예상과 달랐던 점은 아직 비어 있다.
-
-> 위 요약은 2026-11-10 기준이다. 이후 인증/RBAC, PostgreSQL 통합 재실행, 동시성·보안 점검은 완료됐다. 실제 클라우드 배포는 2026-11-24에 완료했다(Vercel · Render · Neon). CI/CD는 아직 남아 있다(`DEVELOPMENT_HISTORY.md` 7절).
+> 위 요약은 2026-11-10 기준이다. 이후 인증/RBAC, PostgreSQL 통합 재실행, 동시성·보안 점검은 완료됐다. 실제 클라우드 배포는 2026-11-24에 완료했다(Vercel · Render · Neon). CI/CD는 아직 남아 있다([`DEVELOPMENT_HISTORY.md`](DEVELOPMENT_HISTORY.md#7-current-project-status) 7절).

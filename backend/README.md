@@ -13,14 +13,14 @@ FastAPI·React에서 제거했습니다.** 주간 엑셀 업로드가 같은 목
 `import_job`·`import_row`·`import_error`는 Alembic `010_drop_legacy_import_tables`로 삭제합니다
 (기록이 남아 있으면 삭제를 거부). 개발 DB 적용: `.\scripts\migrate-dev-db.ps1`.
 직원 인증·세션·담당 반 권한은 SQLAlchemy/PostgreSQL을 사용합니다.
-Kafka와 Redis는 사용하지 않습니다. 클라우드와 유료 외부 서비스는 사용하지 않습니다.
+Kafka와 Redis는 사용하지 않습니다. 유료 외부 서비스는 사용하지 않습니다. 배포는 Render 무료 플랜에서 실행하고 DB는 Neon을 씁니다([보안 배포 설정 가이드](../docs/deployment/phase11_5_security_deployment_guide.md)).
 
 ## 준비 및 실행
 
 Python 3.12 이상이 필요합니다.
 
 ```powershell
-cd D:\refactor\backend-architecture\backend
+cd backend   # 저장소 루트에서
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -e ".[dev]"
@@ -72,7 +72,7 @@ Compose는 서로 다른 계정·포트·volume을 사용하는 두 서비스를
 - 테스트: `academy_learningops_test`, `academy_test`, `127.0.0.1:55432`
 
 ```powershell
-cd D:\refactor\backend-architecture
+# 저장소 루트에서
 $env:ACADEMY_DEV_DB_PASSWORD = '<local development secret>'
 $env:ACADEMY_TEST_DB_PASSWORD = '<different local test secret>'
 docker compose -f compose.postgres-test.yml up -d --wait
